@@ -1,0 +1,44 @@
+Kommandhub Demo Data for Shopware 6
+Copyright 2026 Kommandhub Limited
+
+This product is proprietary software licensed under the terms in the LICENSE
+file. Any permitted copy must retain this NOTICE file.
+
+--------------------------------------------------------------------------------
+Trademark notice
+--------------------------------------------------------------------------------
+
+"Shopware" is a registered trademark of shopware AG, referenced only to identify
+the platform this software extends. No trademark rights are granted by the
+licence in the LICENSE file.
+
+"Kommandhub" and the Kommandhub logo are trademarks of Kommandhub Limited. The
+licence covers the source code only and does not grant any right to use these
+marks. See the TRADEMARKS.md file for the branding policy.
+
+--------------------------------------------------------------------------------
+Bundled demo media
+--------------------------------------------------------------------------------
+
+The images in src/Resources/demo-media are sample imagery shipped for
+demonstration purposes only. They are not licensed for use in production
+storefronts or marketing material.
+
+--------------------------------------------------------------------------------
+Fetched product photography
+--------------------------------------------------------------------------------
+
+This plugin ships a manifest of Unsplash photo identifiers, not photographs.
+The seed command downloads them from images.unsplash.com on first run and
+imports them into the shop's own media library; no photograph is distributed
+with this software.
+
+Those photographs are provided under the Unsplash License
+(https://unsplash.com/license), which grants an irrevocable, non-exclusive,
+worldwide licence to download, copy, modify, distribute and use them free of
+charge, including commercially, without permission or attribution. The licence
+does not extend to compiling Unsplash photographs in order to replicate a
+similar or competing service.
+
+Attribution is not required. It is appreciated by the photographers, and a shop
+built on this demo data is welcome to credit them.

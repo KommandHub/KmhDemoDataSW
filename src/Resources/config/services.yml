@@ -1,0 +1,116 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+    # Give this plugin's services the ConfigurableLogger wherever they type-hint
+    # PSR-3, without touching the container-wide Psr\Log\LoggerInterface alias.
+    #
+    # Aliasing that globally rebinds LoggerInterface for *every* autowired
+    # consumer in the installation, including Shopware core and other plugins.
+    # Two plugins doing it means the last one compiled wins, so sibling plugins
+    # would silently log through each other's logger and each other's debug
+    # toggle. A bind is scoped to the services defined in this file, so it
+    # cannot collide.
+    bind:
+      Psr\Log\LoggerInterface $logger: '@Kommandhub\DemoData\Logging\ConfigurableLogger'
+
+  Kommandhub\DemoData\:
+    resource: '../../*'
+    exclude: '../../{DependencyInjection,Entity,Migration,Tests,Kernel.php}'
+
+  # The explicit $logger argument overrides the bind above, so the wrapper
+  # decorates the real monolog channel instead of recursing into itself.
+  Kommandhub\DemoData\Logging\ConfigurableLogger:
+    arguments:
+      $logger: '@monolog.logger.kommandhub_demodata_channel'
+    tags:
+      - { name: 'monolog.logger', channel: 'kommandhub_demodata_channel' }
+
+  # DAL repositories are registered as `<entity>.repository`, not by type, so
+  # every repository argument has to be named explicitly. Autowiring cannot
+  # guess which of the ~400 repositories a typed EntityRepository wants.
+  Kommandhub\DemoData\Seeder\ManufacturerSeeder:
+    arguments:
+      $manufacturerRepository: '@product_manufacturer.repository'
+
+  Kommandhub\DemoData\Seeder\PropertySeeder:
+    arguments:
+      $propertyGroupRepository: '@property_group.repository'
+      $propertyGroupOptionRepository: '@property_group_option.repository'
+
+  Kommandhub\DemoData\Seeder\TagSeeder:
+    arguments:
+      $tagRepository: '@tag.repository'
+
+  Kommandhub\DemoData\Seeder\MediaSeeder:
+    arguments:
+      $mediaRepository: '@media.repository'
+      $mediaFolderRepository: '@media_folder.repository'
+
+  Kommandhub\DemoData\Seeder\SalesChannelSeeder:
+    arguments:
+      $salesChannelRepository: '@sales_channel.repository'
+      $salesChannelDomainRepository: '@sales_channel_domain.repository'
+
+  Kommandhub\DemoData\Seeder\CategoryWriter:
+    arguments:
+      $categoryRepository: '@category.repository'
+      $cmsPageRepository: '@cms_page.repository'
+
+  Kommandhub\DemoData\Seeder\ProductSeeder:
+    arguments:
+      $productRepository: '@product.repository'
+
+  Kommandhub\DemoData\Seeder\CrossSellingSeeder:
+    arguments:
+      $crossSellingRepository: '@product_cross_selling.repository'
+
+  Kommandhub\DemoData\Seeder\TaxResolver:
+    arguments:
+      $taxRepository: '@tax.repository'
+
+  Kommandhub\DemoData\Seeder\PriceRuleSeeder:
+    arguments:
+      $ruleRepository: '@rule.repository'
+
+  Kommandhub\DemoData\Seeder\FooterSeeder:
+    arguments:
+      $cmsPageRepository: '@cms_page.repository'
+
+  Kommandhub\DemoData\Seeder\ShopContextResolver:
+    arguments:
+      $salesChannelRepository: '@sales_channel.repository'
+      $stateMachineStateRepository: '@state_machine_state.repository'
+      $salutationRepository: '@salutation.repository'
+
+  Kommandhub\DemoData\Seeder\CustomerGroupSeeder:
+    arguments:
+      $customerGroupRepository: '@customer_group.repository'
+
+  Kommandhub\DemoData\Seeder\CustomerSeeder:
+    arguments:
+      $customerRepository: '@customer.repository'
+
+  Kommandhub\DemoData\Seeder\OrderSeeder:
+    arguments:
+      $orderRepository: '@order.repository'
+      $productRepository: '@product.repository'
+      $customerRepository: '@customer.repository'
+
+  Kommandhub\DemoData\Seeder\LandingPageSeeder:
+    arguments:
+      $cmsPageRepository: '@cms_page.repository'
+      $categoryRepository: '@category.repository'
+
+  Kommandhub\DemoData\Command\DemoDataStatusCommand:
+    arguments:
+      $salesChannelRepository: '@sales_channel.repository'
+      $categoryRepository: '@category.repository'
+      $productRepository: '@product.repository'
+    tags:
+      - { name: 'console.command' }
+
+  Kommandhub\DemoData\Command\SeedDemoDataCommand:
+    tags:
+      - { name: 'console.command' }

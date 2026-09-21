@@ -1,0 +1,32 @@
+parameters:
+    paths:
+        - 'src/'
+
+    # shopware/storefront is a declared dependency (see composer.json); PHPStan
+    # resolves Shopware\Storefront\* through the Composer autoloader. Do NOT add
+    # a scanDirectories path into the host's vendor/ — it breaks in CI and in
+    # shopware-cli, where the extension is analysed in an isolated directory.
+    # Set the level to 9 (the highest level)
+    level: 9
+
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+
+        # Chunked writes are the fix for N:1 queries, not an instance of one.
+        # shopware.noEntityRepositoryInLoop cannot tell a per-batch call from a
+        # per-entity one, so BatchWriter — which exists to hold that loop and
+        # nothing else — is the single place it is waived. Every other seeder
+        # goes through it, so a genuine per-entity call elsewhere is still
+        # caught.
+        -
+            identifier: shopware.noEntityRepositoryInLoop
+            path: src/Service/BatchWriter.php
+            # The rule ships with shopware-cli's ruleset, not with the plugin's
+            # own PHPStan run, so this ignore is legitimately unmatched here.
+            reportUnmatched: false
+
+    parallel:
+        jobSize: 20
+        maximumNumberOfProcesses: 32
+        minimumNumberOfJobsPerProcess: 2

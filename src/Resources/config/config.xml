@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/6.7/src/Core/System/SystemConfig/Schema/config.xsd">
+
+
+    <card>
+        <title>Logging</title>
+        <title lang="de-DE">Protokollierung</title>
+
+        <input-field type="bool">
+            <name>enableDebugging</name>
+            <label>Enable debug logging</label>
+            <label lang="de-DE">Debug-Protokollierung aktivieren</label>
+            <defaultValue>false</defaultValue>
+            <helpText>
+                Writes debug, info and warning entries to var/log/kommandhub_demodata_*.log.
+                Errors are always logged regardless of this setting. Can be scoped
+                to a single sales channel.
+            </helpText>
+            <helpText lang="de-DE">
+                Schreibt Debug-, Info- und Warnungseinträge nach
+                var/log/kommandhub_demodata_*.log. Fehler werden unabhängig von dieser
+                Einstellung immer protokolliert.
+            </helpText>
+        </input-field>
+
+        <input-field type="multi-select">
+            <name>logLevels</name>
+            <label>Log levels</label>
+            <label lang="de-DE">Protokollstufen</label>
+            <helpText>
+                Restrict debug logging to specific PSR-3 levels. Leave empty to
+                log every level once debug logging is enabled.
+            </helpText>
+            <options>
+                <option><id>debug</id><name>Debug</name></option>
+                <option><id>info</id><name>Info</name></option>
+                <option><id>notice</id><name>Notice</name></option>
+                <option><id>warning</id><name>Warning</name></option>
+            </options>
+        </input-field>
+    </card>
+</config>
