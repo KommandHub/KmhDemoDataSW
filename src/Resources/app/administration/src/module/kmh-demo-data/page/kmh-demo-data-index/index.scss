@@ -1,0 +1,26 @@
+// Meteor design tokens rather than SCSS variables: the admin's SCSS variables
+// are not in scope for a plugin stylesheet in 6.7, and the tokens follow the
+// admin's own light and dark themes without being told to.
+.kmh-demo-data-index {
+    &__hint {
+        color: var(--color-text-secondary-default, #52667a);
+        margin-bottom: 24px;
+    }
+
+    &__report {
+        margin-top: 24px;
+    }
+
+    &__notes {
+        margin: 24px 0 0;
+        padding-left: 20px;
+        color: var(--color-text-secondary-default, #52667a);
+
+        li {
+            margin-bottom: 8px;
+            // Demo logins and follow-up commands land here; they are read and
+            // copied rather than skimmed, so they must not be truncated.
+            overflow-wrap: break-word;
+        }
+    }
+}

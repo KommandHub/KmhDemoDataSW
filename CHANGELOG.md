@@ -51,6 +51,12 @@ nothing and reports exactly that. Products the plugin did not create are never
 given generated reviews, pricing or cross-selling. Nothing is ever deleted,
 including on uninstall.
 
+**Admin module.** Everything above can also be generated from **Settings >
+Extensions > Demo data**, with the same options as the command. The run is
+queued and the page reports progress, so it survives a reload and cannot be
+started twice at once. Needs an admin tab open, or a queue worker, to consume
+the job.
+
 `bin/console kmh:demo-data:status` reports what already exists without writing
 anything.
 

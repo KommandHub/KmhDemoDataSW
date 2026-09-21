@@ -83,6 +83,10 @@ No `Application/Domain/Infrastructure` nesting — one obvious home per class.
 | `src/Seeder/OrderSeeder.php` | a year of order history per channel |
 | `src/Seeder/ShopContextResolver.php` | reads the channel's country, methods and state-machine ids — creates none of them |
 | `src/Blueprint/PeopleBlueprint.php` | who buys, where they live, and the order state mix |
+| `src/Administration/Controller/DemoDataController.php` | the admin module's two endpoints — queue a run, read its status |
+| `src/MessageQueue/` | the queued generation message and its handler |
+| `src/Service/SeedStatusStore.php` | what the last run did, kept in the system config so no migration is needed |
+| `src/Resources/app/administration/` | the admin module: page, API service, ACL and snippets |
 | `src/Service/ChannelPricing.php` | a channel's rule, price factor and quantity ladder as one value |
 | `src/Service/SeedReport.php` | per-entity created / reused / adopted / enriched tally |
 | `src/Command/` | `kmh:demo-data:seed`, `kmh:demo-data:status` |
@@ -97,7 +101,27 @@ line — edit `DemoBlueprint` and nothing else.
 
 ## Features
 
-### Seeding
+### Generating from the admin
+
+**Settings > Extensions > Demo data.** Choose which sales channels to build, how
+many products per category, and whether to download photography and generate
+customers and orders, then press Generate.
+
+The work is queued rather than run in the request — the first seed of an
+installation downloads around 400 photographs and takes minutes, which no
+browser request should sit through. The page polls until the job reports back,
+survives a reload mid-run, and refuses a second run while one is in flight: two
+seeders racing on the same deterministic ids would each read the other's
+half-written rows as missing.
+
+Because it is queued, **an admin tab has to stay open** (Shopware's admin worker
+consumes the queue) or a `messenger:consume` worker has to be running. The CLI
+command below has no such requirement.
+
+The module is gated behind its own ACL privilege, `kmh_demo_data.generate`,
+rather than folded into a broader settings role.
+
+### Seeding from the CLI
 
 ```bash
 bin/console kmh:demo-data:seed                     # everything (2,000 products)

@@ -77,6 +77,18 @@ Cross-cutting, always present:
   products without renaming existing ones. Anything that reorders that list
   changes product keys, and every affected product is orphaned with its reviews
   and cross-selling still attached to the old row.
+- **Admin snippets go through `Shopware.Locale.extend` in `main.js`.** Passing
+  a `snippets` key to `Module.register` is rejected by the admin ESLint ruleset,
+  and simply dropping the key ships a UI rendering raw snippet keys — the
+  translations are not picked up from a `snippet/` folder on their own.
+- **Admin SCSS has no Shopware SCSS variables in scope.** Use Meteor CSS custom
+  properties (`var(--color-text-secondary-default, …)`); `$color-darkgray-200`
+  and friends fail the build outright.
+- **Generation from the admin is queued, never synchronous.** The first seed
+  downloads four hundred photographs; an HTTP request cannot wait for that.
+  `SeedStatusStore` holds the run state in the system config rather than an
+  entity, because one row of status does not justify a migration that every
+  installation then carries forever.
 - **`make validate-plugin` runs rules the plugin's own PHPStan does not.**
   `shopware-cli extension validate --full --store-compliance` loads Shopware's
   ruleset on top: no `Context::createDefaultContext()` (use `createCLIContext()`

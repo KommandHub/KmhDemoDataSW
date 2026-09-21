@@ -1,0 +1,150 @@
+{% block kmh_demo_data_index %}
+<sw-page class="kmh-demo-data-index">
+
+    {% block kmh_demo_data_index_header %}
+    <template #smart-bar-header>
+        <h2>{{ $tc('kmh-demo-data.general.mainMenuItemGeneral') }}</h2>
+    </template>
+    {% endblock %}
+
+    {% block kmh_demo_data_index_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            class="kmh-demo-data-index__generate"
+            variant="primary"
+            :disabled="isRunning || isLoading"
+            :is-loading="isRunning"
+            @click="onGenerate"
+        >
+            {{ $tc('kmh-demo-data.general.generate') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+
+    {% block kmh_demo_data_index_content %}
+    <template #content>
+        <sw-card-view>
+
+            {% block kmh_demo_data_index_options %}
+            <mt-card
+                position-identifier="kmh-demo-data-options"
+                :title="$tc('kmh-demo-data.options.title')"
+                :is-loading="isLoading"
+            >
+                <p class="kmh-demo-data-index__hint">
+                    {{ $tc('kmh-demo-data.options.hint') }}
+                </p>
+
+                <sw-multi-select
+                    v-model:value="selectedChannels"
+                    class="kmh-demo-data-index__channels"
+                    :options="channels"
+                    label-property="name"
+                    value-property="key"
+                    :label="$tc('kmh-demo-data.options.channels')"
+                    :helpText="$tc('kmh-demo-data.options.channelsHelp')"
+                    :disabled="isRunning"
+                />
+
+                <mt-number-field
+                    v-model="perCategory"
+                    class="kmh-demo-data-index__per-category"
+                    numberType="int"
+                    :min="1"
+                    :label="$tc('kmh-demo-data.options.perCategory')"
+                    :helpText="$tc('kmh-demo-data.options.perCategoryHelp')"
+                    :disabled="isRunning"
+                />
+
+                <mt-switch
+                    v-model="withMedia"
+                    class="kmh-demo-data-index__with-media"
+                    :label="$tc('kmh-demo-data.options.withMedia')"
+                    :helpText="$tc('kmh-demo-data.options.withMediaHelp')"
+                    :disabled="isRunning"
+                />
+
+                <mt-switch
+                    v-model="withOrders"
+                    class="kmh-demo-data-index__with-orders"
+                    :label="$tc('kmh-demo-data.options.withOrders')"
+                    :helpText="$tc('kmh-demo-data.options.withOrdersHelp')"
+                    :disabled="isRunning"
+                />
+            </mt-card>
+            {% endblock %}
+
+            {% block kmh_demo_data_index_status %}
+            <mt-card
+                position-identifier="kmh-demo-data-status"
+                :title="$tc('kmh-demo-data.status.title')"
+            >
+                {% block kmh_demo_data_index_status_running %}
+                <mt-banner
+                    v-if="isRunning"
+                    variant="info"
+                    :title="$tc('kmh-demo-data.status.runningTitle')"
+                >
+                    {{ $tc('kmh-demo-data.status.runningBody') }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_status_failed %}
+                <mt-banner
+                    v-else-if="status.state === 'failed'"
+                    variant="critical"
+                    :title="$tc('kmh-demo-data.status.failedTitle')"
+                >
+                    {{ status.message }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_status_finished %}
+                <mt-banner
+                    v-else-if="status.state === 'finished'"
+                    variant="positive"
+                    :title="$tc('kmh-demo-data.status.finishedTitle')"
+                >
+                    {{ $tc('kmh-demo-data.status.finishedBody', 0, {
+                        created: status.created,
+                        enriched: status.enriched,
+                    }) }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_status_idle %}
+                <mt-banner
+                    v-else
+                    variant="neutral"
+                    :title="$tc('kmh-demo-data.status.idleTitle')"
+                >
+                    {{ $tc('kmh-demo-data.status.idleBody') }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_status_report %}
+                <sw-data-grid
+                    v-if="hasReport"
+                    class="kmh-demo-data-index__report"
+                    :dataSource="reportRows"
+                    :columns="reportColumns"
+                    :showSelection="false"
+                    :showActions="false"
+                    :plainAppearance="true"
+                />
+                {% endblock %}
+
+                {% block kmh_demo_data_index_status_notes %}
+                <ul v-if="status.notes && status.notes.length" class="kmh-demo-data-index__notes">
+                    <li v-for="(note, index) in status.notes" :key="index">{{ note }}</li>
+                </ul>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

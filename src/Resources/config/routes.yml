@@ -1,0 +1,5 @@
+# Controllers are discovered by attribute; the route scope and ACL live on the
+# class itself so a new endpoint cannot be added without one.
+kmh_demo_data_administration:
+    resource: '../../Administration/Controller'
+    type: attribute

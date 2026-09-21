@@ -114,3 +114,11 @@ services:
   Kommandhub\DemoData\Command\SeedDemoDataCommand:
     tags:
       - { name: 'console.command' }
+
+  # Controllers are instantiated by the router, so they have to be public.
+  Kommandhub\DemoData\Administration\Controller\DemoDataController:
+    public: true
+    arguments:
+      $bus: '@messenger.default_bus'
+    tags:
+      - { name: 'controller.service_arguments' }

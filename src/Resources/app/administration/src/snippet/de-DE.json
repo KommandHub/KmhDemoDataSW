@@ -1,0 +1,36 @@
+{
+  "kmh-demo-data": {
+    "general": {
+      "mainMenuItemGeneral": "Demodaten",
+      "descriptionTextModule": "Erzeugt einen realistischen Demokatalog mit Kunden und Bestellungen.",
+      "generate": "Erzeugen"
+    },
+    "options": {
+      "title": "Was erzeugt wird",
+      "hint": "Beliebig oft ausführbar. Vorhandene Daten werden wiederverwendet statt dupliziert, und es wird nie etwas gelöscht.",
+      "channels": "Verkaufskanäle",
+      "channelsHelp": "Leer lassen, um alle Kanäle zu erzeugen.",
+      "perCategory": "Produkte pro Kategorie",
+      "perCategoryHelp": "Ein höherer Wert ergänzt nur Produkte. Vorhandene behalten Namen, Nummern und IDs.",
+      "withMedia": "Produktfotos herunterladen",
+      "withMediaHelp": "Der erste Lauf lädt rund 400 Fotos und dauert einige Minuten. Zum Erzeugen ohne Bilder deaktivieren.",
+      "withOrders": "Kunden und Bestellungen erzeugen",
+      "withOrdersHelp": "Fügt Kunden und ein Jahr Bestellhistorie hinzu, damit Dashboard und Bestellliste etwas zeigen."
+    },
+    "status": {
+      "title": "Letzter Lauf",
+      "idleTitle": "Noch nichts erzeugt",
+      "idleBody": "Oben Optionen wählen und auf Erzeugen klicken.",
+      "runningTitle": "Wird erzeugt",
+      "runningBody": "Läuft im Hintergrund und benötigt einen geöffneten Admin-Tab. Du kannst diese Seite verlassen; das Ergebnis ist bei deiner Rückkehr hier.",
+      "finishedTitle": "Fertig",
+      "finishedBody": "{created} Einträge erstellt, {enriched} vorhandene Einträge ergänzt.",
+      "failedTitle": "Erzeugung fehlgeschlagen"
+    },
+    "notification": {
+      "queued": "Erzeugung eingereiht.",
+      "generateFailed": "Erzeugung konnte nicht gestartet werden.",
+      "statusFailed": "Status konnte nicht gelesen werden."
+    }
+  }
+}

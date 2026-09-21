@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/kmhdemodatasw/administration/",
+  "entryPoints": {
+    "kmh-demo-data-s-w": {
+      "css": [
+        "/bundles/kmhdemodatasw/administration/assets/kmh-demo-data-s-w-DwPa7F3b.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/kmhdemodatasw/administration/assets/kmh-demo-data-s-w-DdN4WSjy.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}
