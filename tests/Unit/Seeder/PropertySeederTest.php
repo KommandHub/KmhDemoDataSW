@@ -66,12 +66,13 @@ class PropertySeederTest extends TestCase
         $optionWithoutName->assign(['groupId' => 'adopted-colour']);
 
         $optionSearches = 0;
-        $optionRepo->method('search')->willReturnCallback(function () use (
-            $existingOption,
-            $optionWithoutGroup,
-            $optionWithoutName,
-            &$optionSearches
-        ): EntitySearchResult {
+        $optionRepo->method('search')->willReturnCallback(
+            function () use (
+                $existingOption,
+                $optionWithoutGroup,
+                $optionWithoutName,
+                &$optionSearches
+            ): EntitySearchResult {
                 ++$optionSearches;
 
                 return $this->searchResult(new PropertyGroupOptionCollection([
