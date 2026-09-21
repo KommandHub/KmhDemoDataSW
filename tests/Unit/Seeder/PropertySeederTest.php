@@ -57,12 +57,28 @@ class PropertySeederTest extends TestCase
         $existingOption->setName('Black');
         $existingOption->assign(['groupId' => 'adopted-colour']);
 
+        $optionWithoutGroup = new PropertyGroupOptionEntity();
+        $optionWithoutGroup->setId('orphan-option');
+        $optionWithoutGroup->setName('Orphan');
+
+        $optionWithoutName = new PropertyGroupOptionEntity();
+        $optionWithoutName->setId('unnamed-option');
+        $optionWithoutName->assign(['groupId' => 'adopted-colour']);
+
         $optionSearches = 0;
-        $optionRepo->method('search')->willReturnCallback(
-            function () use ($existingOption, &$optionSearches): EntitySearchResult {
+        $optionRepo->method('search')->willReturnCallback(function () use (
+            $existingOption,
+            $optionWithoutGroup,
+            $optionWithoutName,
+            &$optionSearches
+        ): EntitySearchResult {
                 ++$optionSearches;
 
-                return $this->searchResult(new PropertyGroupOptionCollection([$existingOption]));
+                return $this->searchResult(new PropertyGroupOptionCollection([
+                    $existingOption,
+                    $optionWithoutGroup,
+                    $optionWithoutName,
+                ]));
             }
         );
 
@@ -98,6 +114,55 @@ class PropertySeederTest extends TestCase
         $this->assertNotEmpty($result);
     }
 
+    public function testSeedRunsTheFirstRunOptionLookupAfterCreatingGroups(): void
+    {
+        $groupRepository = $this->createMock(EntityRepository::class);
+        $optionRepository = $this->createMock(EntityRepository::class);
+        $resolver = $this->createMock(EntityResolver::class);
+        $resolver->method('ids')->willReturn(new DemoIdGenerator());
+
+        $groupRepository->method('search')->willReturn(
+            $this->searchResult(new PropertyGroupCollection())
+        );
+        $optionRepository->method('search')->willReturn(
+            $this->searchResult(new PropertyGroupOptionCollection())
+        );
+        $groupRepository->method('create')->willReturn($this->writtenEvent());
+        $optionRepository->method('create')->willReturn($this->writtenEvent());
+
+        $seeder = new PropertySeeder($groupRepository, $optionRepository, $resolver);
+
+        $result = $seeder->seed(Context::createDefaultContext(), new SeedReport());
+
+        $this->assertCount(\count(\Kommandhub\DemoData\Blueprint\DemoBlueprint::propertyGroups()), $result);
+    }
+
+    public function testSeedReusesAGroupWithItsDeterministicId(): void
+    {
+        $groupRepository = $this->createMock(EntityRepository::class);
+        $optionRepository = $this->createMock(EntityRepository::class);
+        $resolver = $this->createMock(EntityResolver::class);
+        $ids = new DemoIdGenerator();
+        $resolver->method('ids')->willReturn($ids);
+
+        $owned = new PropertyGroupEntity();
+        $owned->setId($ids->id('property-group', 'colour'));
+        $owned->setName('Colour');
+
+        $groups = new PropertyGroupCollection([$owned]);
+        $groupRepository->method('search')->willReturn($this->searchResult($groups));
+        $optionRepository->method('search')->willReturn(
+            $this->searchResult(new PropertyGroupOptionCollection())
+        );
+        $groupRepository->method('create')->willReturn($this->writtenEvent());
+        $optionRepository->method('create')->willReturn($this->writtenEvent());
+
+        $result = (new PropertySeeder($groupRepository, $optionRepository, $resolver))
+            ->seed(Context::createDefaultContext(), new SeedReport());
+
+        $this->assertSame($owned->getId(), $result['colour']['id']);
+    }
+
     private function writtenEvent(): EntityWrittenContainerEvent
     {
         return EntityWrittenContainerEvent::createWithWrittenEvents([], Context::createDefaultContext(), []);
@@ -125,5 +190,21 @@ class PropertySeederTest extends TestCase
 
         $this->assertSame('#0b0b0b', $method->invoke($seeder, 'Black'));
         $this->assertNull($method->invoke($seeder, 'Cotton'));
+    }
+
+    public function testExistingOptionsReturnsEmptyResultWithoutQueryingForNoGroups(): void
+    {
+        $optionRepository = $this->createMock(EntityRepository::class);
+        $optionRepository->expects($this->never())->method('search');
+
+        $seeder = new PropertySeeder(
+            $this->createMock(EntityRepository::class),
+            $optionRepository,
+            $this->createMock(EntityResolver::class)
+        );
+
+        $method = (new \ReflectionClass($seeder))->getMethod('existingOptions');
+
+        $this->assertSame([], $method->invoke($seeder, Context::createDefaultContext(), []));
     }
 }

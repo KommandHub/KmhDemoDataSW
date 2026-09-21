@@ -99,6 +99,22 @@ class DemoDataControllerTest extends TestCase
         $this->assertTrue($dispatched->withOrders);
     }
 
+    public function testGenerateTreatsMalformedChannelsAsNoChannelFilter(): void
+    {
+        $this->status->method('isRunning')->willReturn(false);
+        $this->status->method('read')->willReturn([]);
+        $this->bus->expects($this->once())->method('dispatch')->willReturnCallback(
+            static fn (object $message): Envelope => new Envelope($message)
+        );
+
+        $response = $this->controller->generate($this->request([
+            'channels' => 'fresh',
+            'perCategory' => '',
+        ]));
+
+        $this->assertSame(JsonResponse::HTTP_ACCEPTED, $response->getStatusCode());
+    }
+
     public function testGenerateRejectsAnUnknownChannel(): void
     {
         $this->status->method('isRunning')->willReturn(false);

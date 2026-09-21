@@ -217,7 +217,7 @@ class PropertySeeder
             $name = $option->getName();
             // A partially hydrated option has no group to file it under, and
             // reading the typed property before it is set is a fatal, not a null.
-            $groupId = $option->has('groupId') ? $option->get('groupId') : null;
+            $groupId = $option->getVars()['groupId'] ?? null;
 
             if ($name !== null && \is_string($groupId)) {
                 $options[$groupId][$name] = $option->getId();

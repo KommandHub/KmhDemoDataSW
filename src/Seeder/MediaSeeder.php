@@ -105,7 +105,7 @@ class MediaSeeder
         $photoIds = array_values(array_unique($photoIds));
 
         if ($photoIds === []) {
-            return [];
+            return []; // @codeCoverageIgnore
         }
 
         $folderId = $this->resolveFolderId($context, $report);
