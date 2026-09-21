@@ -7,6 +7,8 @@ evenly across 40 categories in five sales channels — a general storefront, a
 grocery market, a B2B trade supply, a health-and-beauty shop and a clearance
 outlet. Each channel has its own root category, category tree, landing page and
 products. `--per-category` changes the size; raising it only adds products.
+Category listings use Shopware's listing layout with the filter sidebar, so a
+catalogue this size is browsable rather than an endless grid.
 
 **Products.** Descriptions, SEO metadata, prices and list prices, purchase
 prices, stock, EAN, manufacturer numbers, properties, tags, category links and

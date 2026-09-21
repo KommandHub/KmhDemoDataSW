@@ -14,7 +14,9 @@ use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 
 class CategoryWriterTest extends TestCase
@@ -166,6 +168,124 @@ class CategoryWriterTest extends TestCase
         );
 
         $this->assertSame('fallback-page', $writer->defaultCmsPageId(Context::createDefaultContext(), 'product_list'));
+    }
+
+    /**
+     * Shopware ships two locked product listing layouts; only one has a filter
+     * sidebar, and they are told apart by structure rather than by name.
+     */
+    public function testDefaultCmsPageIdAsksForTheRequestedSectionType(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $cmsPageRepository = $this->createMock(EntityRepository::class);
+        $resolver = $this->createMock(EntityResolver::class);
+        $resolver->method('ids')->willReturn(new DemoIdGenerator());
+        $writer = new CategoryWriter($categoryRepository, $cmsPageRepository, $resolver);
+
+        $criteria = null;
+        $cmsPageRepository->method('searchIds')->willReturnCallback(
+            function (Criteria $passed) use (&$criteria): IdSearchResult {
+                $criteria = $passed;
+
+                return $this->idResult('sidebar-page');
+            }
+        );
+
+        $this->assertSame(
+            'sidebar-page',
+            $writer->defaultCmsPageId(Context::createDefaultContext(), 'product_list', 'sidebar')
+        );
+        $this->assertInstanceOf(Criteria::class, $criteria);
+        $this->assertSame(
+            ['type' => 'product_list', 'locked' => true, 'sections.type' => 'sidebar'],
+            $this->filterValues($criteria)
+        );
+    }
+
+    /**
+     * A shop whose listing layouts were replaced may have nothing with a
+     * sidebar. A layout without one beats no layout at all.
+     */
+    public function testDefaultCmsPageIdFallsBackToALayoutWithoutTheRequestedSection(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $cmsPageRepository = $this->createMock(EntityRepository::class);
+        $resolver = $this->createMock(EntityResolver::class);
+        $resolver->method('ids')->willReturn(new DemoIdGenerator());
+        $writer = new CategoryWriter($categoryRepository, $cmsPageRepository, $resolver);
+
+        $cmsPageRepository->method('searchIds')->willReturnOnConsecutiveCalls(
+            $this->idResult(null),          // locked, with a sidebar
+            $this->idResult(null),          // any, with a sidebar
+            $this->idResult('plain-page')   // locked, sidebar or not
+        );
+
+        $this->assertSame(
+            'plain-page',
+            $writer->defaultCmsPageId(Context::createDefaultContext(), 'product_list', 'sidebar')
+        );
+    }
+
+    /**
+     * A category this plugin created is ours to correct; otherwise a change of
+     * layout would only ever reach shops that had never been seeded.
+     */
+    public function testUpsertOverwritesOwnedFieldsButLeavesAnAdoptedCategoryAlone(): void
+    {
+        foreach ([false, true] as $adopted) {
+            $categoryRepository = $this->createMock(EntityRepository::class);
+            $cmsPageRepository = $this->createMock(EntityRepository::class);
+            $resolver = $this->createMock(EntityResolver::class);
+            $resolver->method('ids')->willReturn(new DemoIdGenerator());
+
+            $existing = new CategoryEntity();
+            $existing->setId('cat-id');
+            $resolver->method('resolve')->willReturn(
+                $adopted
+                    ? ResolvedEntity::adopted('cat-id', $existing)
+                    : ResolvedEntity::owned('cat-id', $existing)
+            );
+
+            $overwrite = null;
+            $resolver->method('enrichmentPayload')->willReturnCallback(
+                function (ResolvedEntity $r, array $payload, array $fill, array $additive, array $over) use (&$overwrite) {
+                    $overwrite = $over;
+
+                    return null;
+                }
+            );
+
+            $writer = new CategoryWriter($categoryRepository, $cmsPageRepository, $resolver);
+            $writer->upsert(
+                Context::createDefaultContext(),
+                new SeedReport(),
+                'cat',
+                ['path'],
+                'parent-id',
+                'Name',
+                ['cmsPageId' => 'sidebar-page'],
+                [],
+                ['cmsPageId']
+            );
+
+            $this->assertSame($adopted ? [] : ['cmsPageId'], $overwrite);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function filterValues(Criteria $criteria): array
+    {
+        $values = [];
+
+        foreach ($criteria->getFilters() as $filter) {
+            if ($filter instanceof EqualsFilter) {
+                $values[$filter->getField()] = $filter->getValue();
+            }
+        }
+
+        return $values;
     }
 
     private function idResult(?string $firstId): IdSearchResult

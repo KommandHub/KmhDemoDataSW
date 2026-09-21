@@ -140,6 +140,13 @@ Cross-cutting, always present:
   makes every category look already-configured, and the default it hands back
   is a product listing — which is how a navigation root ends up rendering as a
   filtered product grid instead of a shop front.
+- **Locked layouts are told apart by structure, not by name.** Shopware ships
+  two locked `product_list` layouts and the only difference that matters is that
+  one has a section of type `sidebar`. `CategoryWriter::defaultCmsPageId()`
+  therefore filters on `sections.type`; matching on the title would break on any
+  installation whose admin language is not English. It falls back to a
+  sidebar-less layout rather than returning none, because a shop may have
+  replaced its listing layouts entirely.
 - **Advanced prices are scoped by rule, not by sales channel.** `product_price`
   carries a `rule_id` and no `sales_channel_id`, so "per-channel pricing" means
   a rule per channel with a `salesChannel` condition (`PriceRuleSeeder`) and the

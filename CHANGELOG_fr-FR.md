@@ -7,7 +7,9 @@ uniformément sur 40 catégories dans cinq canaux de vente — une boutique
 généraliste, un marché alimentaire, un canal B2B, une boutique santé-beauté et
 un outlet. Chaque canal possède sa catégorie racine, son arborescence, sa page
 d'accueil et ses produits. `--per-category` ajuste la taille ; l'augmenter ne
-fait qu'ajouter des produits.
+fait qu'ajouter des produits. Les listings de catégories utilisent la mise en
+page Shopware avec barre latérale de filtres, pour qu'un catalogue de cette
+taille reste navigable plutôt qu'une grille sans fin.
 
 **Produits.** Descriptions, métadonnées SEO, prix et prix barrés, prix d'achat,
 stock, EAN, références fabricant, propriétés, tags, rattachements aux catégories

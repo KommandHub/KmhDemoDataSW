@@ -40,7 +40,9 @@ class CategorySeeder
         array $mediaIds,
         array $photoMediaIds = []
     ): array {
-        $listingPageId = $this->categories->defaultCmsPageId($context, 'product_list');
+        // Listings get the layout with the filter sidebar: a catalogue this size
+        // is unusable without filters within reach.
+        $listingPageId = $this->categories->defaultCmsPageId($context, 'product_list', 'sidebar');
         $leaves = [];
 
         $this->walk($context, $report, $rootCategoryId, $tree, [$channelKey], [], $listingPageId, $mediaIds, $photoMediaIds, $leaves);
@@ -87,7 +89,8 @@ class CategorySeeder
                     isset($node['image']) && \is_string($node['image']) ? ($mediaIds[$node['image']] ?? null) : null,
                     $previous
                 ),
-                ['description', 'metaTitle', 'metaDescription', 'mediaId', 'cmsPageId', 'afterCategoryId']
+                ['description', 'metaTitle', 'metaDescription', 'mediaId', 'afterCategoryId'],
+                ['cmsPageId']
             );
 
             $previous = $categoryId;

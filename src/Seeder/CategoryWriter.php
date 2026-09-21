@@ -44,6 +44,7 @@ class CategoryWriter
      * @param array<int, string> $path key path behind the deterministic id
      * @param array<string, mixed> $fields payload beyond id / parentId / name
      * @param array<int, string> $fillIfEmpty fields to top up on an existing row
+     * @param array<int, string> $overwriteWhenOwned fields to correct on a row this plugin created, but never on an adopted one
      */
     public function upsert(
         Context $context,
@@ -53,7 +54,8 @@ class CategoryWriter
         ?string $parentId,
         string $name,
         array $fields,
-        array $fillIfEmpty = []
+        array $fillIfEmpty = [],
+        array $overwriteWhenOwned = []
     ): string {
         $resolved = $this->resolver->resolve(
             $this->categoryRepository,
@@ -82,7 +84,16 @@ class CategoryWriter
 
         $resolved->adopted ? $report->adopted($reportKey) : $report->reused($reportKey);
 
-        $enrichment = $this->resolver->enrichmentPayload($resolved, $payload, [...$fillIfEmpty, 'customFields']);
+        // An adopted category is the merchant's, so only its gaps are filled.
+        // One we created is ours to correct — otherwise a change of layout only
+        // ever reaches shops that have not been seeded yet.
+        $enrichment = $this->resolver->enrichmentPayload(
+            $resolved,
+            $payload,
+            [...$fillIfEmpty, 'customFields'],
+            [],
+            $resolved->adopted ? [] : $overwriteWhenOwned
+        );
 
         if ($enrichment !== null) {
             $this->categoryRepository->update([$enrichment], $context);
@@ -191,25 +202,43 @@ class CategoryWriter
     /**
      * A locked CMS layout of the given type — Shopware's own defaults. Without
      * one, a seeded category renders an empty page.
+     *
+     * `$requiredSectionType` picks between layouts that are otherwise alike:
+     * Shopware ships two locked product listing layouts, and the one with
+     * filters down the side is the one with a section of type `sidebar`.
+     * Matching on structure rather than on the layout's name keeps this working
+     * on an installation whose admin language is not English.
      */
-    public function defaultCmsPageId(Context $context, string $type): ?string
+    public function defaultCmsPageId(Context $context, string $type, ?string $requiredSectionType = null): ?string
     {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('type', $type));
-        $criteria->addFilter(new EqualsFilter('locked', true));
-        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
-        $criteria->setLimit(1);
+        $id = $this->findCmsPageId($context, $type, $requiredSectionType, true)
+            ?? $this->findCmsPageId($context, $type, $requiredSectionType, false);
 
-        $id = $this->cmsPageRepository->searchIds($criteria, $context)->firstId();
-
-        if ($id !== null) {
+        if ($id !== null || $requiredSectionType === null) {
             return $id;
         }
 
-        $fallback = new Criteria();
-        $fallback->addFilter(new EqualsFilter('type', $type));
-        $fallback->setLimit(1);
+        // A shop whose listing layouts have been replaced may have nothing with
+        // a sidebar. A layout without one beats no layout at all.
+        return $this->defaultCmsPageId($context, $type);
+    }
 
-        return $this->cmsPageRepository->searchIds($fallback, $context)->firstId();
+    private function findCmsPageId(Context $context, string $type, ?string $sectionType, bool $locked): ?string
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('type', $type));
+
+        if ($locked) {
+            $criteria->addFilter(new EqualsFilter('locked', true));
+        }
+
+        if ($sectionType !== null) {
+            $criteria->addFilter(new EqualsFilter('sections.type', $sectionType));
+        }
+
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
+        $criteria->setLimit(1);
+
+        return $this->cmsPageRepository->searchIds($criteria, $context)->firstId();
     }
 }

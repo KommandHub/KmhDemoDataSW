@@ -183,6 +183,12 @@ On top of that, two trees that are deliberately **not** per-channel:
 A channel that already has a footer or service menu configured keeps it; only
 channels with none are pointed at the shared trees.
 
+**Category listings get the filter sidebar.** Shopware ships two locked listing
+layouts; the seeder picks the one with a `sidebar` section, matched on structure
+rather than on the layout's name so it also works on a non-English admin. A
+category the plugin created is moved onto it on a later run, while a category
+that came with the shop keeps whatever layout it already has.
+
 **Each channel gets its own landing page.** Five channels sharing one layout
 look like one shop with five URLs, so every channel gets a CMS page of its own:
 a hero using its own category imagery, its own headline and copy, a product

@@ -7,7 +7,9 @@ verteilt auf 40 Kategorien in fünf Verkaufskanälen — ein allgemeiner Storefr
 ein Lebensmittelmarkt, ein B2B-Großhandel, ein Beauty- und Gesundheitsshop sowie
 ein Outlet. Jeder Kanal hat eine eigene Wurzelkategorie, einen eigenen
 Kategoriebaum, eine eigene Landingpage und eigene Produkte. `--per-category`
-ändert die Größe; ein höherer Wert ergänzt nur Produkte.
+ändert die Größe; ein höherer Wert ergänzt nur Produkte. Kategorielistings
+verwenden das Shopware-Listing-Layout mit Filter-Sidebar, damit ein Katalog
+dieser Größe durchsuchbar bleibt statt ein endloses Raster zu sein.
 
 **Produkte.** Beschreibungen, SEO-Metadaten, Preise und Streichpreise,
 Einkaufspreise, Bestand, EAN, Herstellernummern, Eigenschaften, Tags,
