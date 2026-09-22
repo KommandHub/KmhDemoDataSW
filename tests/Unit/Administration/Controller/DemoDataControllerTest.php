@@ -205,6 +205,29 @@ class DemoDataControllerTest extends TestCase
     }
 
     /**
+     * A real value gets trimmed and passed through as the chosen login,
+     * distinct from the blank case which falls back to the default.
+     */
+    public function testDemoUserPassesThroughTrimmedFieldsWhenProvided(): void
+    {
+        $passed = [];
+        $this->users->method('provision')->willReturnCallback(
+            function (Context $context, ?string $email, ?string $username, ?string $password, bool $rotate) use (&$passed): DemoUserAccount {
+                $passed = [$email, $username];
+
+                return DemoUserAccount::created('user-id', 'demo@example.com', 'demo', 'pw', 1);
+            }
+        );
+
+        $this->controller->demoUser(
+            $this->request(['email' => '  custom@example.com  ', 'username' => '  custom-user  ']),
+            Context::createDefaultContext()
+        );
+
+        $this->assertSame(['custom@example.com', 'custom-user'], $passed);
+    }
+
+    /**
      * The account exists and this plugin did not create it: a conflict, not a
      * failure, and the page says something different about each.
      */

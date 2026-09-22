@@ -11,6 +11,7 @@ use Kommandhub\DemoData\Util\DemoDataConstants;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleCollection;
+use Shopware\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -194,6 +195,91 @@ class DemoUserProvisionerTest extends TestCase
             ['exists' => false, 'email' => null, 'username' => null, 'active' => null, 'privileges' => 0],
             $this->provisioner()->describe(Context::createDefaultContext())
         );
+    }
+
+    public function testDescribeReportsTheExistingAccountAndItsPrivilegeCount(): void
+    {
+        $user = $this->user($this->ids->id('user', 'demo-viewer'));
+        $user->setActive(true);
+
+        $role = new AclRoleEntity();
+        $role->setId('role-id');
+        $role->setPrivileges(['product:read', 'category:read']);
+        $user->setAclRoles(new AclRoleCollection([$role]));
+
+        $this->usersFound([$user]);
+
+        $this->assertSame(
+            [
+                'exists' => true,
+                'email' => DemoUserProvisioner::DEFAULT_EMAIL,
+                'username' => DemoUserProvisioner::DEFAULT_USERNAME,
+                'active' => true,
+                'privileges' => 2,
+            ],
+            $this->provisioner()->describe(Context::createDefaultContext())
+        );
+    }
+
+    /**
+     * When no administrator exists yet to borrow a locale from, and the
+     * installation has no "en-GB" locale either, the provisioner still needs a
+     * locale to create the account with — any locale in the installation will
+     * do.
+     */
+    public function testLocaleFallsBackToAnyLocaleWhenThereIsNoAdministratorOrEnglishLocale(): void
+    {
+        $this->usersFound([]);
+
+        // Fresh mock: the default configured in setUp() always answers with
+        // 'locale-id' and cannot be told apart from a second, differently
+        // configured stub on the same method.
+        $this->locales = $this->createMock(EntityRepository::class);
+
+        $calls = 0;
+        $this->locales->method('searchIds')->willReturnCallback(
+            function () use (&$calls): IdSearchResult {
+                ++$calls;
+                $result = $this->createMock(IdSearchResult::class);
+                // First call looks for "en-GB" by code and finds nothing; the
+                // second call asks for any locale at all.
+                $result->method('firstId')->willReturn($calls === 1 ? null : 'fallback-locale-id');
+
+                return $result;
+            }
+        );
+
+        $written = null;
+        $this->users->method('create')->willReturnCallback(
+            function (array $payload) use (&$written): EntityWrittenContainerEvent {
+                $written = $payload[0];
+
+                return $this->writeEvent();
+            }
+        );
+
+        $this->provisioner()->provision(Context::createDefaultContext());
+
+        $this->assertSame('fallback-locale-id', $written['localeId']);
+    }
+
+    /**
+     * An installation with no locales at all cannot host any user, demo or
+     * otherwise; the provisioner refuses cleanly rather than writing a broken
+     * account.
+     */
+    public function testLocaleThrowsWhenTheInstallationHasNoLocaleAtAll(): void
+    {
+        $this->usersFound([]);
+
+        $this->locales = $this->createMock(EntityRepository::class);
+        $empty = $this->createMock(IdSearchResult::class);
+        $empty->method('firstId')->willReturn(null);
+        $this->locales->method('searchIds')->willReturn($empty);
+
+        $this->expectException(\RuntimeException::class);
+
+        $this->provisioner()->provision(Context::createDefaultContext());
     }
 
     /**

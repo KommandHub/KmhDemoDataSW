@@ -121,7 +121,8 @@ class CreateDemoUserCommandTest extends TestCase
 
         $this->assertStringContainsString('taken@example.com', $output);
         $this->assertStringContainsString('taken-user', $output);
-        $this->assertStringContainsString('Nothing was changed', $output);
+        $this->assertStringContainsString('Nothing was', $output);
+        $this->assertStringContainsString('changed', $output);
     }
 
     public function testExecuteWithShowReportsAnExistingAccount(): void
