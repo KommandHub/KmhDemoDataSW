@@ -1,4 +1,4 @@
-.PHONY: help up down build restart shell plugin-list test test-coverage cs cs-fix analyse fixture-load resync prepare validate-plugin cli changelog zip
+.PHONY: help up down build restart shell plugin-list test test-coverage cs cs-fix analyse fixture-load resync prepare validate-plugin cli changelog zip zip-release
 
 CONTAINER := shopware
 PLUGIN_DIR := custom/static-plugins/KmhDemoDataSW
@@ -85,7 +85,8 @@ help:
 	@echo "  validate-plugin   - Validate the plugin with shopware-cli (store compliance)"
 	@echo "  cli               - Run any shopware-cli command: make cli ARGS=\"--version\""
 	@echo "  changelog         - Render the plugin changelog as the store would"
-	@echo "  zip               - Build a distributable plugin zip into build/"
+	@echo "  zip               - Package the working tree for a test shop (container)"
+	@echo "  zip-release       - Package the committed tree for a release (host, needs shopware-cli)"
 
 up:
 	docker compose up -d --build
@@ -154,9 +155,28 @@ changelog:
 # from a git ref, which fails in this mounted checkout ("cannot find checkout tag
 # or branch") and would exclude uncommitted work anyway — the opposite of what a
 # test-container package is for.
+#
+# The consequence is that this zip carries whatever else is lying around:
+# .phpunit.cache, build/, the dev half of vendor/. It is fine for installing a
+# work-in-progress into a test shop and useless as a release artifact — around
+# 50 MB and 20,000 files against 2 MB and 111. Use zip-release for anything that
+# leaves this machine.
 zip:
 	$(CHECK_READY)
 	$(call EXEC_IN_PLUGIN,shopware-cli extension zip . --release --disable-git --output-directory build)
+
+
+# Built on the host, where .git is visible: the CLI then packages the committed
+# tree and nothing else. This is what goes onto a GitHub release or into the
+# Shopware Store. Commit first — uncommitted work is, by design, left out.
+zip-release:
+	@command -v shopware-cli >/dev/null 2>&1 || { \
+		echo "❌ shopware-cli is not installed on this machine (brew install FriendsOfShopware/tap/shopware-cli)"; \
+		exit 1; \
+	}
+	@test -z "$$(git status --porcelain)" || echo "⚠️  working tree is dirty — the zip will contain the committed state only"
+	shopware-cli extension zip . --release --output-directory build
+	@ls -lh build/*.zip
 
 fixture-load:
 	$(CHECK_READY)
