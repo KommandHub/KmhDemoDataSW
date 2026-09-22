@@ -30,7 +30,24 @@
     "notification": {
       "queued": "Erzeugung eingereiht.",
       "generateFailed": "Erzeugung konnte nicht gestartet werden.",
-      "statusFailed": "Status konnte nicht gelesen werden."
+      "statusFailed": "Status konnte nicht gelesen werden.",
+      "userCreated": "Demo-Zugang angelegt.",
+      "userUpdated": "Demo-Zugang aktualisiert.",
+      "userRefused": "Diese E-Mail oder dieser Benutzername gehört zu einem Konto, das nicht von diesem Plugin stammt. Es wurde nichts geändert.",
+      "userFailed": "Der Demo-Zugang konnte nicht angelegt werden."
+    },
+    "user": {
+      "title": "Demo-Zugang",
+      "hint": "Ein Login für Interessenten, denen Sie den Shop zeigen. Er darf in der Administration alles lesen und nichts ändern — kein Anlegen, kein Bearbeiten, kein Löschen.",
+      "existsTitle": "Zugang vorhanden",
+      "existsBody": "{email} (Benutzername {username}), {privileges} Leserechte.",
+      "passwordTitle": "Passwort",
+      "passwordBody": "Wird einmalig angezeigt. Der Shop speichert nur einen Hash — notieren Sie es jetzt, sonst hilft nur ein neues Passwort.",
+      "email": "E-Mail",
+      "username": "Benutzername",
+      "create": "Zugang anlegen",
+      "refresh": "Rechte aktualisieren",
+      "rotate": "Neues Passwort"
     }
   }
 }

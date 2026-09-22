@@ -115,6 +115,16 @@ services:
     tags:
       - { name: 'console.command' }
 
+  Kommandhub\DemoData\Command\CreateDemoUserCommand:
+    tags:
+      - { name: 'console.command' }
+
+  Kommandhub\DemoData\Service\DemoUserProvisioner:
+    arguments:
+      $userRepository: '@user.repository'
+      $aclRoleRepository: '@acl_role.repository'
+      $localeRepository: '@locale.repository'
+
   # Controllers are instantiated by the router, so they have to be public.
   Kommandhub\DemoData\Administration\Controller\DemoDataController:
     public: true

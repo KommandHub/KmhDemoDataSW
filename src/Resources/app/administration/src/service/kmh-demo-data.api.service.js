@@ -18,6 +18,16 @@ class KmhDemoDataApiService extends ApiService {
             .then(ApiService.handleResponse.bind(this));
     }
 
+    /**
+     * Returns the generated password in the response body and nowhere else —
+     * the stored value is a hash, so the page has one chance to show it.
+     */
+    createDemoUser(options = {}) {
+        return this.httpClient
+            .post(`${this.getApiBasePath()}/demo-user`, options, { headers: this.getBasicHeaders() })
+            .then(ApiService.handleResponse.bind(this));
+    }
+
     status() {
         return this.httpClient
             .get(`${this.getApiBasePath()}/status`, { headers: this.getBasicHeaders() })

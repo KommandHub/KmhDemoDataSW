@@ -2,7 +2,7 @@
     "name": "kommandhub/demo-data-sw",
     "description": "Seeds a realistic, idempotent Shopware 6 demo catalogue across multiple sales channels: root categories, products, variants, manufacturers, properties, media and tags.",
     "type": "shopware-platform-plugin",
-    "version": "0.9.0-beta.1",
+    "version": "0.9.0-beta.2",
     "license": "proprietary",
     "keywords": [
         "shopware",

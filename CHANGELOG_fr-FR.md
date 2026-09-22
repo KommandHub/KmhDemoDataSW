@@ -1,3 +1,24 @@
+# 0.9.0-beta.2
+
+**Un compte d'administration en lecture seule pour les démonstrations.**
+`bin/console kmh:demo-data:user` crée un identifiant qui ouvre toutes les pages
+de l'administration sans rien pouvoir modifier : tous les droits de lecture de
+l'installation, aucune création, modification ni suppression. Le mot de passe
+est généré, affiché une seule fois et stocké sous forme de hash —
+`--rotate-password` en choisit un nouveau.
+
+Quatre entités restent exclues : `system_config`, `integration`,
+`user_access_key` et `user_recovery` contiennent les identifiants de la
+boutique, dont les secrets des plugins en clair.
+
+Le compte peut aussi être créé depuis **Paramètres > Extensions > Demo data**,
+sous son propre droit `kmh_demo_data.manage_user`.
+
+Un identifiant que ce plugin n'a pas créé n'est jamais modifié : la commande
+signale un conflit au lieu de réinitialiser le mot de passe de quelqu'un.
+
+---
+
 # 0.9.0-beta.1
 
 Première version.

@@ -30,7 +30,24 @@
     "notification": {
       "queued": "Generation queued.",
       "generateFailed": "Could not start generation.",
-      "statusFailed": "Could not read the generation status."
+      "statusFailed": "Could not read the generation status.",
+      "userCreated": "Demo account created.",
+      "userUpdated": "Demo account updated.",
+      "userRefused": "That email or username belongs to an account this plugin did not create. Nothing was changed.",
+      "userFailed": "The demo account could not be created."
+    },
+    "user": {
+      "title": "Demo account",
+      "hint": "A login for people you are showing the shop to. It can read everything in the administration and change nothing — no create, no update, no delete.",
+      "existsTitle": "Account ready",
+      "existsBody": "{email} (username {username}), {privileges} read privileges.",
+      "passwordTitle": "Password",
+      "passwordBody": "Shown once. The shop keeps only a hash, so write it down now — a forgotten password means generating a new one.",
+      "email": "Email",
+      "username": "Username",
+      "create": "Create account",
+      "refresh": "Refresh privileges",
+      "rotate": "New password"
     }
   }
 }

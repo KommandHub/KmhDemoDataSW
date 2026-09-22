@@ -89,7 +89,7 @@ No `Application/Domain/Infrastructure` nesting — one obvious home per class.
 | `src/Resources/app/administration/` | the admin module: page, API service, ACL and snippets |
 | `src/Service/ChannelPricing.php` | a channel's rule, price factor and quantity ladder as one value |
 | `src/Service/SeedReport.php` | per-entity created / reused / adopted / enriched tally |
-| `src/Command/` | `kmh:demo-data:seed`, `kmh:demo-data:status` |
+| `src/Command/` | `kmh:demo-data:seed`, `kmh:demo-data:status`, `kmh:demo-data:user` |
 | `src/Installer/CustomFieldsInstaller.php` | provenance custom fields on product and category |
 | `src/Resources/demo-media/` | bundled demo imagery, imported on first run |
 | `src/Setting/Service/Config.php` | typed, sales-channel-aware settings reader |
@@ -130,6 +130,7 @@ bin/console kmh:demo-data:seed -p 4                # a small catalogue, e.g. for
 bin/console kmh:demo-data:seed --skip-orders       # catalogue only, no customers or orders
 bin/console kmh:demo-data:seed --skip-media        # no image import (much faster)
 bin/console kmh:demo-data:status                   # read-only: what already exists
+bin/console kmh:demo-data:user                     # the demo administration account
 ```
 
 Non-interactive by design, so it can go in a provisioning script. It prints a
@@ -273,6 +274,49 @@ the same top-level category. The two pools are deliberately disjoint, so the
 tabs never render the same items twice; a tab with nothing to show is not
 created at all. Targets stay inside the product's own sales channel — cross-
 selling a shopper to a product their storefront cannot display is a dead link.
+
+### The demo account
+
+A shop you hand to prospective customers needs a login they cannot break.
+
+```bash
+bin/console kmh:demo-data:user                        # create it, print the password
+bin/console kmh:demo-data:user --show                 # what exists, writes nothing
+bin/console kmh:demo-data:user --rotate-password      # choose a new password
+bin/console kmh:demo-data:user --email x --username y # a login of your own
+```
+
+The account is an ordinary Shopware user with one ACL role, holding every
+`<entity>:read` privilege in the installation — plugin entities included, since
+the list comes from the DAL registry — plus the `<module>.viewer` keys the
+administration compares against to decide what to draw. No create, update or
+delete, and `admin` is false, which is the part that matters: an administrator
+flagged as admin bypasses ACL altogether and the role would be decoration.
+
+Four entities stay out however broad the role is, because reading them is a copy
+of the shop's credentials rather than a tour of the shop: `system_config` (every
+plugin's secret, in plain text — a live payment key among them), `integration`,
+`user_access_key` and `user_recovery`.
+
+The password is generated, printed once and stored as a hash. There is no way to
+read it back; `--rotate-password` is the answer to a lost one.
+
+A login this plugin did not create is never written to. Pointing the command at
+an existing account reports a conflict and changes nothing, rather than resetting
+a real administrator's password.
+
+The same account can be created from **Settings > Extensions > Demo data**. It
+sits behind its own privilege, `kmh_demo_data.manage_user`, separate from
+`kmh_demo_data.generate`: seeding a catalogue and minting a login into the
+administration are not the same permission.
+
+**What it does not cover.** The role grants no *additional* privileges —
+`system.clear_cache`, `system.plugin_maintain`, `system.system_config` and the
+rest — so those screens stay out of reach. The administration also writes
+`user_config` rows for per-user interface state such as grid columns and
+favourites; those writes are denied like any other, which the interface reports
+as an occasional error notice. That is the cost of a role with no update
+privilege at all, and it is deliberate.
 
 ### Idempotency
 

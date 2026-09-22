@@ -7,7 +7,10 @@ namespace Kommandhub\DemoData\Tests\Unit\Administration\Controller;
 use Kommandhub\DemoData\Administration\Controller\DemoDataController;
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\MessageQueue\GenerateDemoDataMessage;
+use Kommandhub\DemoData\Service\DemoUserAccount;
+use Kommandhub\DemoData\Service\DemoUserProvisioner;
 use Kommandhub\DemoData\Service\SeedStatusStore;
+use Shopware\Core\Framework\Context;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Routing\RoutingException;
@@ -20,13 +23,15 @@ class DemoDataControllerTest extends TestCase
 {
     private MessageBusInterface&MockObject $bus;
     private SeedStatusStore&MockObject $status;
+    private DemoUserProvisioner&MockObject $users;
     private DemoDataController $controller;
 
     protected function setUp(): void
     {
         $this->bus = $this->createMock(MessageBusInterface::class);
         $this->status = $this->createMock(SeedStatusStore::class);
-        $this->controller = new DemoDataController($this->bus, $this->status);
+        $this->users = $this->createMock(DemoUserProvisioner::class);
+        $this->controller = new DemoDataController($this->bus, $this->status, $this->users);
     }
 
     public function testGenerateQueuesTheWorkAndAnswersImmediately(): void
@@ -139,13 +144,79 @@ class DemoDataControllerTest extends TestCase
     {
         $this->status->method('read')->willReturn(['state' => SeedStatusStore::STATE_IDLE]);
 
+        $this->users->method('describe')->willReturn(
+            ['exists' => true, 'email' => 'demo@example.com', 'username' => 'demo', 'active' => true, 'privileges' => 412]
+        );
+
         /** @var array<string, mixed> $body */
-        $body = json_decode((string)$this->controller->status()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        $body = json_decode(
+            (string)$this->controller->status(Context::createDefaultContext())->getContent(),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR
+        );
 
         $this->assertSame(['state' => 'idle'], $body['status']);
         $this->assertSame(DemoBlueprint::PRODUCTS_PER_CATEGORY, $body['defaultPerCategory']);
         $this->assertCount(\count(DemoBlueprint::salesChannels()), $body['channels']);
         $this->assertSame(array_keys(DemoBlueprint::salesChannels()), array_column($body['channels'], 'key'));
+        $this->assertSame('demo@example.com', $body['demoUser']['email']);
+    }
+
+    public function testDemoUserReturnsTheGeneratedPasswordOnce(): void
+    {
+        $this->users->method('provision')->willReturn(
+            DemoUserAccount::created('user-id', 'demo@example.com', 'demo', 'a-generated-password', 412)
+        );
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode(
+            (string)$this->controller->demoUser($this->request([]), Context::createDefaultContext())->getContent(),
+            true,
+            512,
+            \JSON_THROW_ON_ERROR
+        );
+
+        $this->assertTrue($body['created']);
+        $this->assertSame('a-generated-password', $body['password']);
+        $this->assertSame(412, $body['privileges']);
+    }
+
+    /**
+     * A blank field from the form means "use the default", not a user called "".
+     */
+    public function testDemoUserTreatsBlankFieldsAsAbsent(): void
+    {
+        $passed = [];
+        $this->users->method('provision')->willReturnCallback(
+            function (Context $context, ?string $email, ?string $username, ?string $password, bool $rotate) use (&$passed): DemoUserAccount {
+                $passed = [$email, $username, $password, $rotate];
+
+                return DemoUserAccount::created('user-id', 'demo@example.com', 'demo', 'pw', 1);
+            }
+        );
+
+        $this->controller->demoUser(
+            $this->request(['email' => '   ', 'username' => '', 'rotatePassword' => true]),
+            Context::createDefaultContext()
+        );
+
+        $this->assertSame([null, null, null, true], $passed);
+    }
+
+    /**
+     * The account exists and this plugin did not create it: a conflict, not a
+     * failure, and the page says something different about each.
+     */
+    public function testDemoUserAnswersConflictWhenTheLoginBelongsToSomebodyElse(): void
+    {
+        $this->users->method('provision')->willReturn(
+            DemoUserAccount::refused('other-id', 'demo@example.com', 'demo')
+        );
+
+        $response = $this->controller->demoUser($this->request([]), Context::createDefaultContext());
+
+        $this->assertSame(JsonResponse::HTTP_CONFLICT, $response->getStatusCode());
     }
 
     /**

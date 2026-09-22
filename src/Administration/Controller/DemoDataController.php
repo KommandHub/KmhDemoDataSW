@@ -6,7 +6,9 @@ namespace Kommandhub\DemoData\Administration\Controller;
 
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\MessageQueue\GenerateDemoDataMessage;
+use Kommandhub\DemoData\Service\DemoUserProvisioner;
 use Kommandhub\DemoData\Service\SeedStatusStore;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\RoutingException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,16 +27,22 @@ use Symfony\Component\Routing\Attribute\Route;
  * everything that matters lives in the same seeder the CLI command uses, so the
  * two cannot drift apart.
  */
-#[Route(defaults: ['_routeScope' => ['api'], '_acl' => ['kmh_demo_data:generate']])]
+#[Route(defaults: ['_routeScope' => ['api']])]
 class DemoDataController
 {
     public function __construct(
         private readonly MessageBusInterface $bus,
-        private readonly SeedStatusStore $status
+        private readonly SeedStatusStore $status,
+        private readonly DemoUserProvisioner $users
     ) {
     }
 
-    #[Route(path: '/api/_action/kmh-demo-data/generate', name: 'api.action.kmh_demo_data.generate', methods: ['POST'])]
+    #[Route(
+        path: '/api/_action/kmh-demo-data/generate',
+        name: 'api.action.kmh_demo_data.generate',
+        defaults: ['_acl' => ['kmh_demo_data:generate']],
+        methods: ['POST']
+    )]
     public function generate(Request $request): JsonResponse
     {
         // Refusing a second run is not a nicety: two seeders racing on the same
@@ -59,14 +67,77 @@ class DemoDataController
         return new JsonResponse(['status' => $this->status->read(), 'accepted' => true], JsonResponse::HTTP_ACCEPTED);
     }
 
-    #[Route(path: '/api/_action/kmh-demo-data/status', name: 'api.action.kmh_demo_data.status', methods: ['GET'])]
-    public function status(): JsonResponse
+    #[Route(
+        path: '/api/_action/kmh-demo-data/status',
+        name: 'api.action.kmh_demo_data.status',
+        defaults: ['_acl' => ['kmh_demo_data:generate']],
+        methods: ['GET']
+    )]
+    public function status(Context $context): JsonResponse
     {
         return new JsonResponse([
             'status' => $this->status->read(),
             'channels' => $this->availableChannels(),
             'defaultPerCategory' => DemoBlueprint::PRODUCTS_PER_CATEGORY,
+            'demoUser' => $this->users->describe($context),
         ]);
+    }
+
+    /**
+     * Creates, or refreshes, the read-only account the demo goes out with.
+     *
+     * Handled in the request rather than queued: it writes two rows, and the
+     * page has to show the generated password, which exists only for as long as
+     * this response does.
+     */
+    #[Route(
+        path: '/api/_action/kmh-demo-data/demo-user',
+        name: 'api.action.kmh_demo_data.demo_user',
+        defaults: ['_acl' => ['kmh_demo_data:manage_user']],
+        methods: ['POST']
+    )]
+    public function demoUser(Request $request, Context $context): JsonResponse
+    {
+        $payload = $request->toArray();
+
+        $account = $this->users->provision(
+            $context,
+            $this->text($payload, 'email'),
+            $this->text($payload, 'username'),
+            null,
+            (bool)($payload['rotatePassword'] ?? false)
+        );
+
+        if ($account->refused) {
+            return new JsonResponse(
+                ['refused' => true, 'email' => $account->email, 'username' => $account->username],
+                JsonResponse::HTTP_CONFLICT
+            );
+        }
+
+        return new JsonResponse([
+            'refused' => false,
+            'created' => $account->created,
+            'email' => $account->email,
+            'username' => $account->username,
+            'privileges' => $account->privileges,
+            // Null unless this request chose one. The page shows it once.
+            'password' => $account->password,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function text(array $payload, string $key): ?string
+    {
+        $value = $payload[$key] ?? null;
+
+        if (!\is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
     }
 
     /**

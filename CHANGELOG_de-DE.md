@@ -1,3 +1,23 @@
+# 0.9.0-beta.2
+
+**Ein Nur-Lese-Zugang zur Administration für Kundenpräsentationen.**
+`bin/console kmh:demo-data:user` legt ein Login an, das jede Seite der
+Administration öffnen und nichts ändern kann: alle Leserechte der Installation,
+kein Anlegen, Bearbeiten oder Löschen. Das Passwort wird erzeugt, einmalig
+angezeigt und nur als Hash gespeichert — `--rotate-password` vergibt ein neues.
+
+Vier Entitäten bleiben ausgenommen: `system_config`, `integration`,
+`user_access_key` und `user_recovery` enthalten die Zugangsdaten des Shops,
+darunter Plugin-Secrets im Klartext.
+
+Der Zugang lässt sich auch über **Einstellungen > Erweiterungen > Demo data**
+anlegen, mit eigenem Recht `kmh_demo_data.manage_user`.
+
+Ein Login, das nicht von diesem Plugin stammt, wird nie verändert: Der Befehl
+meldet einen Konflikt, statt das Passwort einer fremden Person zurückzusetzen.
+
+---
+
 # 0.9.0-beta.1
 
 Erste Veröffentlichung.

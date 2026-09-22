@@ -142,6 +142,81 @@
             </mt-card>
             {% endblock %}
 
+            {% block kmh_demo_data_index_user %}
+            <mt-card
+                v-if="canManageUser"
+                position-identifier="kmh-demo-data-user"
+                :title="$tc('kmh-demo-data.user.title')"
+            >
+                <p class="kmh-demo-data-index__hint">
+                    {{ $tc('kmh-demo-data.user.hint') }}
+                </p>
+
+                {% block kmh_demo_data_index_user_existing %}
+                <mt-banner
+                    v-if="demoUser.exists"
+                    variant="positive"
+                    :title="$tc('kmh-demo-data.user.existsTitle')"
+                >
+                    {{ $tc('kmh-demo-data.user.existsBody', 0, {
+                        email: demoUser.email,
+                        username: demoUser.username,
+                        privileges: demoUser.privileges,
+                    }) }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_user_password %}
+                <mt-banner
+                    v-if="demoUserPassword"
+                    variant="attention"
+                    :title="$tc('kmh-demo-data.user.passwordTitle')"
+                >
+                    <code class="kmh-demo-data-index__password">{{ demoUserPassword }}</code>
+                    <p>{{ $tc('kmh-demo-data.user.passwordBody') }}</p>
+                </mt-banner>
+                {% endblock %}
+
+                <mt-text-field
+                    v-model="demoUserEmail"
+                    class="kmh-demo-data-index__user-email"
+                    :label="$tc('kmh-demo-data.user.email')"
+                    :placeholder="demoUser.email || 'demo@example.com'"
+                    :disabled="isCreatingUser"
+                />
+
+                <mt-text-field
+                    v-model="demoUserUsername"
+                    class="kmh-demo-data-index__user-username"
+                    :label="$tc('kmh-demo-data.user.username')"
+                    :placeholder="demoUser.username || 'demo'"
+                    :disabled="isCreatingUser"
+                />
+
+                <div class="kmh-demo-data-index__user-actions">
+                    <mt-button
+                        class="kmh-demo-data-index__create-user"
+                        variant="primary"
+                        :disabled="isCreatingUser"
+                        :is-loading="isCreatingUser"
+                        @click="onCreateDemoUser(false)"
+                    >
+                        {{ $tc(demoUser.exists ? 'kmh-demo-data.user.refresh' : 'kmh-demo-data.user.create') }}
+                    </mt-button>
+
+                    <mt-button
+                        v-if="demoUser.exists"
+                        class="kmh-demo-data-index__rotate-password"
+                        variant="secondary"
+                        :disabled="isCreatingUser"
+                        @click="onCreateDemoUser(true)"
+                    >
+                        {{ $tc('kmh-demo-data.user.rotate') }}
+                    </mt-button>
+                </div>
+            </mt-card>
+            {% endblock %}
+
         </sw-card-view>
     </template>
     {% endblock %}

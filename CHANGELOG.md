@@ -1,3 +1,25 @@
+# 0.9.0-beta.2
+
+**A read-only administration account for showing the shop to customers.**
+`bin/console kmh:demo-data:user` creates a login that can open every page of the
+administration and change nothing: every read privilege in the installation, no
+create, update or delete. The password is generated, shown once and stored only
+as a hash — `--rotate-password` chooses a new one.
+
+Four entities are withheld however broad the role is: `system_config`,
+`integration`, `user_access_key` and `user_recovery` hold the shop's own
+credentials, including plugin secrets in plain text.
+
+The account can also be created from **Settings > Extensions > Demo data**,
+under its own `kmh_demo_data.manage_user` privilege — handing somebody a way in
+is not the same permission as seeding a catalogue.
+
+A login this plugin did not create is never touched: pointing the command at an
+existing account reports a conflict rather than resetting that person's
+password.
+
+---
+
 # 0.9.0-beta.1
 
 Initial release.

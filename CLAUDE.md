@@ -140,6 +140,25 @@ Cross-cutting, always present:
   makes every category look already-configured, and the default it hands back
   is a product listing — which is how a navigation root ends up rendering as a
   filtered product grid instead of a shop front.
+- **An ACL role needs two different kinds of string.** `<entity>:read` decides
+  what the API answers; `<module>.viewer` decides what the administration draws.
+  The viewer keys exist only in the admin's JavaScript
+  (`addPrivilegeMappingEntry`), are never expanded server-side, and are compared
+  verbatim against the flat privilege list of the user's roles. A role with only
+  entity privileges answers every API call and shows an empty menu, which reads
+  as a broken login rather than a permissions problem. `ReadOnlyPrivileges`
+  keeps the module list hard-coded and documents how to regenerate it.
+- **`admin => false` is load-bearing on a generated user.** A Shopware user
+  flagged as admin bypasses ACL entirely, so a "read-only" account created with
+  it can edit the whole shop and the role is decoration.
+- **`user` and `acl_role` are write-protected to the system scope.** An ordinary
+  context is refused with "insufficient privileges"; writes go through
+  `$context->scope(Context::SYSTEM_SCOPE, ...)`.
+- **Read access is not automatically harmless.** `system_config` exposes
+  `configuration_value` through the API, which is where every plugin keeps its
+  secrets — a live payment key included. It and `integration`,
+  `user_access_key`, `user_recovery` are withheld from the demo role for that
+  reason, and the list is a constant so the decision is visible.
 - **Locked layouts are told apart by structure, not by name.** Shopware ships
   two locked `product_list` layouts and the only difference that matters is that
   one has a section of type `sidebar`. `CategoryWriter::defaultCmsPageId()`
