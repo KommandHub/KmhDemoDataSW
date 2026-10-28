@@ -1,3 +1,11 @@
+# 0.9.0-beta.3
+
+**B2B companies on the trade channel.** With the KommandHub B2B Foundation active, the trade channel gets two active companies and one pending company (for the approval demo), each with an admin and three employees, a "Buyer" and a "Purchasing manager" role, in the "Trade (net prices)" customer group. Active companies also get an order history attributed to the company and, with B2B Quick Order, two shared shopping lists. Demo logins are listed in the README and printed by the seed command. Without the B2B suite nothing changes.
+
+The read-only demo account also sees the Companies module when the Foundation is active.
+
+---
+
 # 0.9.0-beta.2
 
 **A read-only administration account for showing the shop to customers.**

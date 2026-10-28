@@ -275,6 +275,48 @@ tabs never render the same items twice; a tab with nothing to show is not
 created at all. Targets stay inside the product's own sales channel — cross-
 selling a shopper to a product their storefront cannot display is a dead link.
 
+### B2B companies (trade channel)
+
+With the KommandHub B2B suite installed and active, the trade channel also gets
+companies, so the suite can be shown end to end without setting anything up.
+Nothing B2B is seeded, and nothing fails, without it: the seeder checks at
+runtime whether the B2B Foundation's entities are registered (shopping lists
+also need B2B Quick Order). This plugin does not require either; `composer.json`
+only suggests them.
+
+| Company | Status | Members | Shared lists | Orders |
+| --- | --- | --- | --- | --- |
+| Northwind Building Supplies Ltd | active | admin + 3 employees | 2 | 3 |
+| Brightwater Facilities GmbH | active | admin + 3 employees | 2 | 3 |
+| Harbourline Joinery Co. | pending (approve it in the administration) | admin + 3 employees | – | – |
+
+Each company has the default **Buyer** role (the permissions the Foundation
+marks "default for Buyer") and a **Purchasing manager** role (every registered
+permission except `company.role.manage` and `company.employee.manage`). Every
+company and its members are in the "Trade (net prices)" customer group. Orders
+come from the order seeder and are attributed to the company as the Foundation
+does at checkout, so "Order again" and the company order history have
+something to show; a pending company cannot order yet, so it has none.
+
+All demo logins use the password `demo12345` on the trade channel:
+
+| Login | Company | Role |
+| --- | --- | --- |
+| `amina.okafor@northwind.example.com` | Northwind | company admin |
+| `jonas.weber@northwind.example.com` | Northwind | Purchasing manager |
+| `clara.hoffmann@northwind.example.com`, `emeka.nwosu@northwind.example.com` | Northwind | Buyer |
+| `stefan.brandt@brightwater.example.com` | Brightwater | company admin |
+| `priya.raman@brightwater.example.com` | Brightwater | Purchasing manager |
+| `lukas.meier@brightwater.example.com`, `fatima.haddad@brightwater.example.com` | Brightwater | Buyer |
+| `kwame.mensah@harbourline.example.com` | Harbourline (pending) | company admin |
+| `ingrid.larsen@harbourline.example.com` | Harbourline (pending) | Purchasing manager |
+| `tomas.novak@harbourline.example.com`, `elif.demir@harbourline.example.com` | Harbourline (pending) | Buyer |
+
+The seed command prints the same list. Rows are written through the B2B
+plugins' DAL entities (their public data model), never SQL, and, like
+everything here, only what is missing is written. The read-only demo account
+also sees the administration's Companies module when the Foundation is active.
+
 ### The demo account
 
 A shop you hand to prospective customers needs a login they cannot break.

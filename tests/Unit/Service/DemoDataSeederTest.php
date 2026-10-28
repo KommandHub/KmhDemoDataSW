@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kommandhub\DemoData\Tests\Unit\Service;
 
+use Kommandhub\DemoData\Seeder\B2bSeeder;
 use Kommandhub\DemoData\Seeder\CategorySeeder;
 use Kommandhub\DemoData\Seeder\CrossSellingSeeder;
 use Kommandhub\DemoData\Seeder\CustomerGroupSeeder;
@@ -21,15 +22,30 @@ use Kommandhub\DemoData\Seeder\ShopContextResolver;
 use Kommandhub\DemoData\Seeder\TagSeeder;
 use Kommandhub\DemoData\Seeder\TaxResolver;
 use Kommandhub\DemoData\Service\DemoDataSeeder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 
 class DemoDataSeederTest extends TestCase
 {
-    public function testSeedWithMediaAndOrders(): void
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function channels(): iterable
     {
-        [$seeder, $manufacturerSeeder, $propertySeeder, $tagSeeder, $mediaSeeder, $salesChannelSeeder, $categorySeeder, $productSeeder, $footerSeeder, $crossSellingSeeder, $priceRuleSeeder, $landingPageSeeder, $customerGroupSeeder, $customerSeeder, $orderSeeder, $shop, $taxResolver] = $this->buildSeeder();
+        yield 'retail channel: no companies' => ['flagship', 0];
+        yield 'trade channel: companies' => ['trade', 1];
+    }
+
+    #[DataProvider('channels')]
+    public function testSeedWithMediaAndOrders(string $channelKey, int $b2bRuns): void
+    {
+        $b2bSeeder = $this->createMock(B2bSeeder::class);
+        $b2bSeeder->expects($this->exactly($b2bRuns))->method('seed')
+            ->with($this->anything(), $this->anything(), $this->anything(), 'group-id', 'salutation-id', ['prod-id'], 19.0);
+        [$seeder, $manufacturerSeeder, $propertySeeder, $tagSeeder, $mediaSeeder, $salesChannelSeeder, $categorySeeder, $productSeeder, $footerSeeder, $crossSellingSeeder, $priceRuleSeeder, $landingPageSeeder, $customerGroupSeeder, $customerSeeder, $orderSeeder, $shop, $taxResolver] = $this->buildSeeder($b2bSeeder);
+        $shop->method('salutationId')->willReturn('salutation-id');
         $context = Context::createDefaultContext();
 
         $manufacturerSeeder->method('seed')->willReturn(['m1' => 'man-id']);
@@ -57,7 +73,7 @@ class DemoDataSeederTest extends TestCase
         $orderSeeder->expects($this->once())->method('seed');
         $landingPageSeeder->expects($this->once())->method('seed');
 
-        $report = $seeder->seed($context, ['flagship'], true, 1, true);
+        $report = $seeder->seed($context, [$channelKey], true, 1, true);
 
         $this->assertNotNull($report);
     }
@@ -94,7 +110,7 @@ class DemoDataSeederTest extends TestCase
     }
 
     /** @return array{0: DemoDataSeeder,1: ManufacturerSeeder,2: PropertySeeder,3: TagSeeder,4: MediaSeeder,5: SalesChannelSeeder,6: CategorySeeder,7: ProductSeeder,8: FooterSeeder,9: CrossSellingSeeder,10: PriceRuleSeeder,11: LandingPageSeeder,12: CustomerGroupSeeder,13: CustomerSeeder,14: OrderSeeder,15: ShopContextResolver,16: TaxResolver} */
-    private function buildSeeder(): array
+    private function buildSeeder(?B2bSeeder $b2bSeeder = null): array
     {
         $manufacturerSeeder = $this->createMock(ManufacturerSeeder::class);
         $propertySeeder = $this->createMock(PropertySeeder::class);
@@ -131,7 +147,8 @@ class DemoDataSeederTest extends TestCase
             $orderSeeder,
             $shop,
             $taxResolver,
-            $logger
+            $logger,
+            $b2bSeeder
         );
 
         return [$seeder, $manufacturerSeeder, $propertySeeder, $tagSeeder, $mediaSeeder, $salesChannelSeeder, $categorySeeder, $productSeeder, $footerSeeder, $crossSellingSeeder, $priceRuleSeeder, $landingPageSeeder, $customerGroupSeeder, $customerSeeder, $orderSeeder, $shop, $taxResolver];

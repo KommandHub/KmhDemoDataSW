@@ -311,11 +311,16 @@ class OrderPayloadBuilder
 
     /**
      * Namespaced per channel so two channels cannot mint the same number, which
-     * Shopware requires to be unique across the shop.
+     * Shopware requires to be unique across the shop. A sub-key of a channel
+     * (`trade-b2b-northwind`, one company's order history) adds its last part,
+     * since its first two letters are the channel's own.
      */
     private function orderNumber(string $channelKey, int $index): string
     {
-        return \sprintf('KMH%s%05d', strtoupper(substr($channelKey, 0, 2)), $index);
+        $parts = explode('-', $channelKey);
+        $sub = \count($parts) > 1 ? '-' . strtoupper((string)end($parts)) . '-' : '';
+
+        return \sprintf('KMH%s%s%05d', strtoupper(substr($channelKey, 0, 2)), $sub, $index);
     }
 
     private function orderedAt(string $key): string

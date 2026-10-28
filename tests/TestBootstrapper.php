@@ -16,6 +16,11 @@ use Shopware\Core\TestBootstrapper as ShopwareTestBootstrapper;
 
 class TestBootstrapper extends ShopwareTestBootstrapper
 {
+    // Core keeps these four as *private* state, and its setters write only its
+    // own copies. bootstrap() below reads ours, so every setter that feeds them
+    // is overridden to keep both in sync. Without that, setForceInstallPlugins()
+    // and addActivePlugins() silently did nothing here: the plugin was never
+    // installed into the test database and every kernel test skipped.
     private bool $forceInstallPlugins = false;
 
     private bool $loadEnvFile = true;
@@ -45,6 +50,37 @@ class TestBootstrapper extends ShopwareTestBootstrapper
     public function setForceLoadFixtures(bool $forceLoadFixtures): void
     {
         $this->forceLoadFixtures = $forceLoadFixtures;
+    }
+
+    public function setForceInstallPlugins(bool $forceInstallPlugins): ShopwareTestBootstrapper
+    {
+        $this->forceInstallPlugins = $forceInstallPlugins;
+
+        return parent::setForceInstallPlugins($forceInstallPlugins);
+    }
+
+    /**
+     * Also reached through addCallingPlugin(), which calls $this->addActivePlugins().
+     */
+    public function addActivePlugins(string ...$activePlugins): ShopwareTestBootstrapper
+    {
+        $this->activePlugins = array_values(array_unique([...$this->activePlugins, ...$activePlugins]));
+
+        return parent::addActivePlugins(...$activePlugins);
+    }
+
+    public function setLoadEnvFile(bool $loadEnvFile): ShopwareTestBootstrapper
+    {
+        $this->loadEnvFile = $loadEnvFile;
+
+        return parent::setLoadEnvFile($loadEnvFile);
+    }
+
+    public function setEnableCommercial(bool $enableCommercial = true): ShopwareTestBootstrapper
+    {
+        $this->commercialEnabled = $enableCommercial;
+
+        return parent::setEnableCommercial($enableCommercial);
     }
 
     public function bootstrap(): ShopwareTestBootstrapper
@@ -194,16 +230,18 @@ class TestBootstrapper extends ShopwareTestBootstrapper
 
         $application = new Application($kernel);
 
+        $connection = $kernel->getContainer()->get(Connection::class);
+
         foreach ($this->activePlugins as $activePlugin) {
-            // No --reinstall: this runs against a freshly created test database
-            // where the plugin has never been installed, so --reinstall means
-            // "uninstall then install", and uninstalling a not-installed plugin
-            // aborts the install — leaving the plugin registered but inactive,
-            // so its services never load and every integration test reads as
-            // "service not found".
+            // --reinstall only when already installed: it means "uninstall then
+            // install", and uninstalling a never-installed plugin aborts the
+            // install, leaving it registered but inactive. When it is installed,
+            // reinstalling is what runs migrations added since the last run.
+            $installed = (bool)$connection->fetchOne('SELECT installed_at IS NOT NULL FROM plugin WHERE name = ?', [$activePlugin]);
             $args = [
                 'command' => 'plugin:install',
                 '--activate' => true,
+                '--reinstall' => $installed,
                 'plugins' => [$activePlugin],
             ];
 

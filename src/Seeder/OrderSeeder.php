@@ -66,6 +66,8 @@ class OrderSeeder
      * @param array{salesChannelId: string, languageId: string, currencyId: string, countryId: string, paymentMethodId: string, shippingMethodId: string} $channel
      * @param array<int, string> $productIds products this channel sells
      * @param array<int, string> $customerIds customers of this channel
+     *
+     * @return array<string, string> order id → customer id, for every order built (new or already there)
      */
     public function seed(
         Context $context,
@@ -76,11 +78,11 @@ class OrderSeeder
         array $customerIds,
         float $taxRate,
         int $count
-    ): void {
+    ): array {
         if ($productIds === [] || $customerIds === []) {
             $report->skipped('order', $count);
 
-            return;
+            return [];
         }
 
         $catalogue = $this->catalogue($context, $channelKey, $productIds);
@@ -89,20 +91,22 @@ class OrderSeeder
         if ($catalogue === [] || $customers === []) {
             $report->skipped('order', $count);
 
-            return;
+            return [];
         }
 
         $payloads = [];
+        $owners = [];
 
         for ($index = 1; $index <= $count; ++$index) {
             $key = $this->ids->key('order', $channelKey, (string)$index);
 
+            $customer = $this->values->pick($key . '|customer', $customers);
             $payload = $this->payloadBuilder->build(
                 $channelKey,
                 $index,
                 $catalogue,
                 $channel,
-                $this->values->pick($key . '|customer', $customers),
+                $customer,
                 $this->stateIds($context, $key),
                 $taxRate
             );
@@ -111,10 +115,13 @@ class OrderSeeder
                 /** @var string $id */
                 $id = $payload['id'];
                 $payloads[$id] = $payload;
+                $owners[$id] = $customer['id'];
             }
         }
 
         $this->write($context, $report, $payloads);
+
+        return $owners;
     }
 
     /**

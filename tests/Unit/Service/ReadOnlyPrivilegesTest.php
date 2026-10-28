@@ -41,6 +41,7 @@ class ReadOnlyPrivilegesTest extends TestCase
         $this->assertContains('product.viewer', $privileges);
         $this->assertContains('order.viewer', $privileges);
         $this->assertContains('users_and_permissions.viewer', $privileges);
+        $this->assertContains('kmh_b2b_company.viewer', $privileges);
 
         foreach ($privileges as $privilege) {
             $this->assertDoesNotMatchRegularExpression(

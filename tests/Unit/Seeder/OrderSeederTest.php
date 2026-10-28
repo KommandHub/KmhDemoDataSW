@@ -44,7 +44,7 @@ class OrderSeederTest extends TestCase
             $this->identicalTo($context)
         );
 
-        $seeder->seed($context, $report, 'flagship', $this->channelContext(), ['p1'], ['c1'], 19.0, 1);
+        $this->assertSame(['order-id' => 'c1'], $seeder->seed($context, $report, 'flagship', $this->channelContext(), ['p1'], ['c1'], 19.0, 1));
     }
 
     public function testSeedSkipsWhenNoProductsOrCustomersAreAvailable(): void

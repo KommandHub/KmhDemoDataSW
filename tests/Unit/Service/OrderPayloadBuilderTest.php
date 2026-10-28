@@ -169,6 +169,17 @@ class OrderPayloadBuilderTest extends TestCase
         $this->assertNotSame($flagship['id'], $trade['id']);
     }
 
+    public function testACompanysOrderHistoryDoesNotReuseItsChannelsNumbers(): void
+    {
+        $trade = $this->build('trade', 1);
+        $company = $this->build('trade-b2b-northwind', 1);
+
+        $this->assertNotNull($trade);
+        $this->assertNotNull($company);
+        $this->assertSame('KMHTR00001', $trade['orderNumber']);
+        $this->assertSame('KMHTR-NORTHWIND-00001', $company['orderNumber']);
+    }
+
     public function testOrdersAreStableAcrossRuns(): void
     {
         $this->assertEquals($this->build('flagship', 7), $this->build('flagship', 7));

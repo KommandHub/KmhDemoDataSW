@@ -1,3 +1,11 @@
+# 0.9.0-beta.3
+
+**B2B-Firmen im Trade-Kanal.** Ist die KommandHub B2B Foundation aktiv, erhält der Trade-Kanal zwei aktive Firmen und eine Firma in Prüfung (für die Freigabe-Demo), jeweils mit Admin und drei Mitarbeitenden, den Rollen „Buyer“ und „Purchasing manager“ und der Kundengruppe „Trade (net prices)“. Aktive Firmen bekommen außerdem eine der Firma zugeordnete Bestellhistorie und, mit B2B Quick Order, zwei geteilte Merklisten. Die Demo-Logins stehen in der README und werden vom Seed-Befehl ausgegeben. Ohne die B2B-Suite ändert sich nichts.
+
+Der Nur-Lese-Demo-Zugang sieht bei aktiver Foundation auch das Firmen-Modul.
+
+---
+
 # 0.9.0-beta.2
 
 **Ein Nur-Lese-Zugang zur Administration für Kundenpräsentationen.**
