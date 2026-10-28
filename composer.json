@@ -2,7 +2,7 @@
     "name": "kommandhub/demo-data-sw",
     "description": "Seeds a realistic, idempotent Shopware 6 demo catalogue across multiple sales channels: root categories, products, variants, manufacturers, properties, media and tags.",
     "type": "shopware-platform-plugin",
-    "version": "0.9.0-beta.2",
+    "version": "0.9.0-beta.3",
     "license": "proprietary",
     "keywords": [
         "shopware",
@@ -30,6 +30,10 @@
     "require": {
         "php": ">=8.2",
         "shopware/core": "^6.6 || ^6.7"
+    },
+    "suggest": {
+        "kommandhub/b2b-foundation-sw": "Seeds B2B companies, members and roles on the trade channel",
+        "kommandhub/b2b-quick-order-sw": "Also seeds shared shopping lists for those companies"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.5",

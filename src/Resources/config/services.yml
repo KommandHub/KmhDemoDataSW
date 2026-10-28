@@ -98,6 +98,11 @@ services:
       $productRepository: '@product.repository'
       $customerRepository: '@customer.repository'
 
+  # The B2B suite is optional: the tagged iterator is empty without it.
+  Kommandhub\DemoData\Seeder\B2bSeeder:
+    arguments:
+      $permissionProviders: !tagged_iterator kmh_b2b.permission_provider
+
   Kommandhub\DemoData\Seeder\LandingPageSeeder:
     arguments:
       $cmsPageRepository: '@cms_page.repository'

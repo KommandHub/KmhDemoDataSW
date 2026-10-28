@@ -1,3 +1,11 @@
+# 0.9.0-beta.3
+
+**Entreprises B2B sur le canal Trade.** Lorsque KommandHub B2B Foundation est active, le canal Trade reçoit deux entreprises actives et une entreprise en attente (pour la démonstration de validation), chacune avec un administrateur et trois employés, les rôles « Buyer » et « Purchasing manager » et le groupe de clients « Trade (net prices) ». Les entreprises actives reçoivent aussi un historique de commandes attribué à l'entreprise et, avec B2B Quick Order, deux listes d'achat partagées. Les identifiants de démonstration figurent dans le README et sont affichés par la commande de génération. Sans la suite B2B, rien ne change.
+
+Le compte de démonstration en lecture seule voit aussi le module Entreprises lorsque la Foundation est active.
+
+---
+
 # 0.9.0-beta.2
 
 **Un compte d'administration en lecture seule pour les démonstrations.**

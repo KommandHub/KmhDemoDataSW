@@ -49,6 +49,9 @@ final class ReadOnlyPrivileges
         'document',
         'flow',
         'integration',
+        // KommandHub B2B Foundation's Companies module (with B2B Quick
+        // Order's Shopping lists tab); a string nobody compares without it.
+        'kmh_b2b_company',
         'landing_page',
         'language',
         'mail_templates',

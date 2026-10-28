@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Kommandhub\DemoData\Service;
 
+use Kommandhub\DemoData\Blueprint\B2bBlueprint;
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\Blueprint\PeopleBlueprint;
+use Kommandhub\DemoData\Seeder\B2bSeeder;
 use Kommandhub\DemoData\Seeder\CategorySeeder;
 use Kommandhub\DemoData\Seeder\CrossSellingSeeder;
 use Kommandhub\DemoData\Seeder\CustomerGroupSeeder;
@@ -55,7 +57,8 @@ class DemoDataSeeder
         private readonly OrderSeeder $orderSeeder,
         private readonly ShopContextResolver $shop,
         private readonly TaxResolver $taxResolver,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly ?B2bSeeder $b2bSeeder = null
     ) {
     }
 
@@ -200,14 +203,16 @@ class DemoDataSeeder
         float $taxRate
     ): void {
         $channel = $this->shop->channel($context, $salesChannelId);
+        $customerGroupId = $this->customerGroupSeeder->resolve($context, $report, $channelKey, $channel['customerGroupId']);
+        $salutationId = $this->shop->salutationId($context);
 
         $customerIds = $this->customerSeeder->seed(
             $context,
             $report,
             $channelKey,
             $channel,
-            $this->customerGroupSeeder->resolve($context, $report, $channelKey, $channel['customerGroupId']),
-            $this->shop->salutationId($context),
+            $customerGroupId,
+            $salutationId,
             PeopleBlueprint::CUSTOMERS_PER_CHANNEL
         );
 
@@ -227,6 +232,12 @@ class DemoDataSeeder
             $taxRate,
             PeopleBlueprint::ORDERS_PER_CHANNEL
         );
+
+        // Companies trade in the trade channel only, and only when the B2B
+        // suite is active; the seeder checks the latter itself.
+        if ($channelKey === B2bBlueprint::CHANNEL_KEY) {
+            $this->b2bSeeder?->seed($context, $report, $channel, $customerGroupId, $salutationId, $productIds, $taxRate);
+        }
 
         $report->note(\sprintf(
             'Demo logins for "%s": %s (password %s)',
