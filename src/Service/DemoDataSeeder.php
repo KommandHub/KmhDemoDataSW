@@ -7,6 +7,7 @@ namespace Kommandhub\DemoData\Service;
 use Kommandhub\DemoData\Blueprint\B2bBlueprint;
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\Blueprint\PeopleBlueprint;
+use Kommandhub\DemoData\Exception\DemoDataException;
 use Kommandhub\DemoData\Seeder\B2bSeeder;
 use Kommandhub\DemoData\Seeder\CategorySeeder;
 use Kommandhub\DemoData\Seeder\CrossSellingSeeder;
@@ -190,6 +191,58 @@ class DemoDataSeeder
     }
 
     /**
+     * Only the B2B companies, on a trade channel an earlier run seeded: no
+     * catalogue, photography or channel set-up, so it takes seconds.
+     *
+     * @throws DemoDataException when the suite is not active or the trade channel does not exist yet
+     */
+    public function seedB2b(Context $context): SeedReport
+    {
+        if ($this->b2bSeeder === null || !$this->b2bSeeder->available()) {
+            throw new DemoDataException('The KommandHub B2B Foundation is not active, so there is nothing to generate companies for.');
+        }
+
+        $definition = DemoBlueprint::salesChannels()[B2bBlueprint::CHANNEL_KEY];
+        $salesChannelId = $this->salesChannelSeeder->existingChannelId($context, B2bBlueprint::CHANNEL_KEY, $definition);
+
+        if ($salesChannelId === null) {
+            throw new DemoDataException(\sprintf('Generate the "%s" sales channel first; the companies trade in it.', $definition['name']));
+        }
+
+        $report = new SeedReport();
+        $channel = $this->shop->channel($context, $salesChannelId);
+
+        $this->b2bSeeder->seed(
+            $context,
+            $report,
+            $channel,
+            $this->customerGroupSeeder->resolve($context, $report, B2bBlueprint::CHANNEL_KEY, $channel['customerGroupId']),
+            $this->shop->salutationId($context),
+            $this->taxResolver->resolve($context, $report, $definition['taxRate'])['rate']
+        );
+
+        return $report;
+    }
+
+    /**
+     * The B2B card's state: the suite, the trade channel, the demo companies.
+     *
+     * @return array{available: bool, lists: bool, channelReady: bool, channelName: string, password: string, companies: list<array{name: string, status: string, exists: bool, logins: list<array{email: string, name: string, role: string}>}>}
+     */
+    public function b2bStatus(Context $context): array
+    {
+        $definition = DemoBlueprint::salesChannels()[B2bBlueprint::CHANNEL_KEY];
+        $state = $this->b2bSeeder?->describe($context) ?? ['available' => false, 'lists' => false, 'companies' => []];
+
+        return [
+            ...$state,
+            'channelReady' => $this->salesChannelSeeder->existingChannelId($context, B2bBlueprint::CHANNEL_KEY, $definition) !== null,
+            'channelName' => $definition['name'],
+            'password' => PeopleBlueprint::DEMO_PASSWORD,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $definition
      * @param array<int, array{leaf: array<string, mixed>, productIds: array<int, string>}> $written
      */
@@ -236,7 +289,7 @@ class DemoDataSeeder
         // Companies trade in the trade channel only, and only when the B2B
         // suite is active; the seeder checks the latter itself.
         if ($channelKey === B2bBlueprint::CHANNEL_KEY) {
-            $this->b2bSeeder?->seed($context, $report, $channel, $customerGroupId, $salutationId, $productIds, $taxRate);
+            $this->b2bSeeder?->seed($context, $report, $channel, $customerGroupId, $salutationId, $taxRate);
         }
 
         $report->note(\sprintf(

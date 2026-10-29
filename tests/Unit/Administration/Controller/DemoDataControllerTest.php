@@ -7,6 +7,7 @@ namespace Kommandhub\DemoData\Tests\Unit\Administration\Controller;
 use Kommandhub\DemoData\Administration\Controller\DemoDataController;
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\MessageQueue\GenerateDemoDataMessage;
+use Kommandhub\DemoData\Service\DemoDataSeeder;
 use Kommandhub\DemoData\Service\DemoUserAccount;
 use Kommandhub\DemoData\Service\DemoUserProvisioner;
 use Kommandhub\DemoData\Service\SeedStatusStore;
@@ -24,6 +25,7 @@ class DemoDataControllerTest extends TestCase
     private MessageBusInterface&MockObject $bus;
     private SeedStatusStore&MockObject $status;
     private DemoUserProvisioner&MockObject $users;
+    private DemoDataSeeder&MockObject $seeder;
     private DemoDataController $controller;
 
     protected function setUp(): void
@@ -31,7 +33,8 @@ class DemoDataControllerTest extends TestCase
         $this->bus = $this->createMock(MessageBusInterface::class);
         $this->status = $this->createMock(SeedStatusStore::class);
         $this->users = $this->createMock(DemoUserProvisioner::class);
-        $this->controller = new DemoDataController($this->bus, $this->status, $this->users);
+        $this->seeder = $this->createMock(DemoDataSeeder::class);
+        $this->controller = new DemoDataController($this->bus, $this->status, $this->users, $this->seeder);
     }
 
     public function testGenerateQueuesTheWorkAndAnswersImmediately(): void
@@ -79,6 +82,37 @@ class DemoDataControllerTest extends TestCase
         $response = $this->controller->generate($this->request([]));
 
         $this->assertSame(JsonResponse::HTTP_CONFLICT, $response->getStatusCode());
+    }
+
+    public function testGenerateB2bQueuesACompaniesOnlyRun(): void
+    {
+        $this->status->method('isRunning')->willReturn(false);
+        $this->status->method('read')->willReturn([]);
+        $this->status->expects($this->once())->method('markQueued');
+
+        $dispatched = null;
+        $this->bus->expects($this->once())->method('dispatch')->willReturnCallback(
+            function (object $message) use (&$dispatched): Envelope {
+                $dispatched = $message;
+
+                return new Envelope($message);
+            }
+        );
+
+        $response = $this->controller->generateB2b();
+
+        $this->assertSame(JsonResponse::HTTP_ACCEPTED, $response->getStatusCode());
+        $this->assertInstanceOf(GenerateDemoDataMessage::class, $dispatched);
+        $this->assertTrue($dispatched->b2bOnly);
+    }
+
+    public function testGenerateB2bRefusesWhileAnotherRunIsInFlight(): void
+    {
+        $this->status->method('isRunning')->willReturn(true);
+        $this->status->method('read')->willReturn([]);
+        $this->bus->expects($this->never())->method('dispatch');
+
+        $this->assertSame(JsonResponse::HTTP_CONFLICT, $this->controller->generateB2b()->getStatusCode());
     }
 
     public function testGenerateDefaultsToEverything(): void
@@ -147,6 +181,9 @@ class DemoDataControllerTest extends TestCase
         $this->users->method('describe')->willReturn(
             ['exists' => true, 'email' => 'demo@example.com', 'username' => 'demo', 'active' => true, 'privileges' => 412]
         );
+        $this->seeder->method('b2bStatus')->willReturn(
+            ['available' => true, 'lists' => true, 'channelReady' => false, 'channelName' => 'Trade', 'password' => 'demo12345', 'companies' => []]
+        );
 
         /** @var array<string, mixed> $body */
         $body = json_decode(
@@ -161,6 +198,7 @@ class DemoDataControllerTest extends TestCase
         $this->assertCount(\count(DemoBlueprint::salesChannels()), $body['channels']);
         $this->assertSame(array_keys(DemoBlueprint::salesChannels()), array_column($body['channels'], 'key'));
         $this->assertSame('demo@example.com', $body['demoUser']['email']);
+        $this->assertFalse($body['b2b']['channelReady']);
     }
 
     public function testDemoUserReturnsTheGeneratedPasswordOnce(): void

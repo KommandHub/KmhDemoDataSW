@@ -34,7 +34,8 @@
       "userCreated": "Demo-Zugang angelegt.",
       "userUpdated": "Demo-Zugang aktualisiert.",
       "userRefused": "Diese E-Mail oder dieser Benutzername gehört zu einem Konto, das nicht von diesem Plugin stammt. Es wurde nichts geändert.",
-      "userFailed": "Der Demo-Zugang konnte nicht angelegt werden."
+      "userFailed": "Der Demo-Zugang konnte nicht angelegt werden.",
+      "b2bQueued": "B2B-Erzeugung eingereiht."
     },
     "user": {
       "title": "Demo-Zugang",
@@ -48,6 +49,31 @@
       "create": "Zugang anlegen",
       "refresh": "Rechte aktualisieren",
       "rotate": "Neues Passwort"
+    },
+    "b2b": {
+      "title": "B2B-Firmen",
+      "hint": "Demo-Firmen für die KommandHub B2B-Suite im Verkaufskanal {channel}: zwei aktive Firmen mit Bestellhistorie und geteilten Merklisten sowie eine ausstehende Firma zur Freigabe unter Kunden > Firmen. Es werden nur die Firmen erzeugt; Katalog und Bilder bleiben unberührt, daher dauert es nur Sekunden.",
+      "generate": "B2B-Daten erzeugen",
+      "unavailableTitle": "B2B-Suite nicht aktiv",
+      "unavailableBody": "Installiere und aktiviere KommandHub B2B Foundation, um Demo-Firmen zu erzeugen.",
+      "channelMissingTitle": "Verkaufskanal fehlt",
+      "channelMissingBody": "Die Firmen kaufen im Verkaufskanal {channel} ein. Erzeuge diesen Kanal zuerst: wähle ihn unter \"Was erzeugt wird\" aus und klicke auf Erzeugen.",
+      "listsMissing": "Geteilte Merklisten benötigen zusätzlich KommandHub B2B Quick Order; ohne das Plugin werden die Firmen ohne Listen erzeugt.",
+      "columnCompany": "Firma",
+      "columnStatus": "Status",
+      "columnGenerated": "Erzeugt",
+      "statusActive": "Aktiv",
+      "statusPending": "Freigabe ausstehend",
+      "yes": "Ja",
+      "no": "Noch nicht",
+      "loginsTitle": "Storefront-Logins",
+      "loginsHint": "Alle Logins verwenden das Passwort {password}.",
+      "columnEmail": "E-Mail",
+      "columnName": "Name",
+      "columnRole": "Rolle",
+      "roleAdmin": "Firmen-Admin",
+      "rolePurchasing": "Einkaufsleitung",
+      "roleBuyer": "Einkäufer"
     }
   }
 }

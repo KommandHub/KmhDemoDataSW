@@ -1,3 +1,13 @@
+# 0.9.0-beta.4
+
+**Generate the B2B companies from the admin.** Settings > Extensions > Demo data has a new "B2B companies" card: whether the B2B suite is active, which demo companies exist, their storefront logins, and a "Generate B2B data" button that seeds only the companies on the existing trade channel, in seconds. It is disabled, with the reason, when the suite is not active or the trade channel has not been generated yet.
+
+Shared lists and company orders now pick their products from what the trade channel sells, so the B2B-only run and a full run choose the same kind of products.
+
+Fixed: the "Finished" and "Demo account" banners showed their counts and logins as blanks.
+
+---
+
 # 0.9.0-beta.3
 
 **B2B companies on the trade channel.** With the KommandHub B2B Foundation active, the trade channel gets two active companies and one pending company (for the approval demo), each with an admin and three employees, a "Buyer" and a "Purchasing manager" role, in the "Trade (net prices)" customer group. Active companies also get an order history attributed to the company and, with B2B Quick Order, two shared shopping lists. Demo logins are listed in the README and printed by the seed command. Without the B2B suite nothing changes.

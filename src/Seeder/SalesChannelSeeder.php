@@ -6,6 +6,7 @@ namespace Kommandhub\DemoData\Seeder;
 
 use Kommandhub\DemoData\Exception\DemoDataException;
 use Kommandhub\DemoData\Service\EntityResolver;
+use Kommandhub\DemoData\Service\ResolvedEntity;
 use Kommandhub\DemoData\Service\SeedReport;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Defaults;
@@ -71,15 +72,8 @@ class SalesChannelSeeder
         string $channelKey,
         array $definition
     ): array {
-        $deterministicId = $this->resolver->ids()->id('sales-channel', $channelKey);
-        $names = array_merge([$definition['name']], $definition['adopt']);
-
-        $resolved = $this->resolver->resolve(
-            $this->salesChannelRepository,
-            $context,
-            $deterministicId,
-            [new EqualsAnyFilter('name', $names)]
-        );
+        $resolved = $this->lookup($context, $channelKey, $definition);
+        $deterministicId = $resolved->id;
 
         if ($resolved->exists) {
             $resolved->adopted ? $report->adopted('sales_channel') : $report->reused('sales_channel');
@@ -122,6 +116,31 @@ class SalesChannelSeeder
         $this->createChannel($context, $report, $deterministicId, $definition, $rootId);
 
         return ['id' => $deterministicId, 'rootCategoryId' => $rootId, 'created' => true, 'rootOwned' => true];
+    }
+
+    /**
+     * The channel an earlier run resolved for this key, without creating one.
+     *
+     * @param array{name: string, adopt: array<int, string>} $definition
+     */
+    public function existingChannelId(Context $context, string $channelKey, array $definition): ?string
+    {
+        $resolved = $this->lookup($context, $channelKey, $definition);
+
+        return $resolved->exists ? $resolved->id : null;
+    }
+
+    /**
+     * @param array{name: string, adopt: array<int, string>} $definition
+     */
+    private function lookup(Context $context, string $channelKey, array $definition): ResolvedEntity
+    {
+        return $this->resolver->resolve(
+            $this->salesChannelRepository,
+            $context,
+            $this->resolver->ids()->id('sales-channel', $channelKey),
+            [new EqualsAnyFilter('name', array_merge([$definition['name']], $definition['adopt']))]
+        );
     }
 
     /**

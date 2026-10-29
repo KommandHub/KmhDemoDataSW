@@ -33,6 +33,7 @@ Component.register('kmh-demo-data-index', {
             demoUserUsername: '',
             demoUserPassword: null,
             isCreatingUser: false,
+            b2b: { available: false, companies: [] },
         };
     },
 
@@ -47,6 +48,58 @@ Component.register('kmh-demo-data-index', {
 
         hasReport() {
             return Array.isArray(this.status.rows) && this.status.rows.length > 0;
+        },
+
+        canGenerateB2b() {
+            return this.b2b.available && this.b2b.channelReady && !this.isRunning && !this.isLoading;
+        },
+
+        b2bCompanyColumns() {
+            return [
+                { property: 'name', label: this.$tc('kmh-demo-data.b2b.columnCompany'), rawData: true, sortable: false },
+                { property: 'statusLabel', label: this.$tc('kmh-demo-data.b2b.columnStatus'), rawData: true, sortable: false },
+                { property: 'generated', label: this.$tc('kmh-demo-data.b2b.columnGenerated'), rawData: true, sortable: false },
+            ];
+        },
+
+        b2bCompanyRows() {
+            return (this.b2b.companies || []).map((company, index) => ({
+                id: `company-${index}`,
+                name: company.name,
+                statusLabel: this.$tc(company.status === 'active'
+                    ? 'kmh-demo-data.b2b.statusActive'
+                    : 'kmh-demo-data.b2b.statusPending'),
+                generated: this.$tc(company.exists ? 'kmh-demo-data.b2b.yes' : 'kmh-demo-data.b2b.no'),
+            }));
+        },
+
+        b2bLoginColumns() {
+            return [
+                { property: 'email', label: this.$tc('kmh-demo-data.b2b.columnEmail'), rawData: true, sortable: false },
+                { property: 'name', label: this.$tc('kmh-demo-data.b2b.columnName'), rawData: true, sortable: false },
+                { property: 'company', label: this.$tc('kmh-demo-data.b2b.columnCompany'), rawData: true, sortable: false },
+                { property: 'role', label: this.$tc('kmh-demo-data.b2b.columnRole'), rawData: true, sortable: false },
+            ];
+        },
+
+        // Only companies that exist: a login for one that was never generated
+        // would just fail at the storefront.
+        b2bLoginRows() {
+            const roles = {
+                admin: 'kmh-demo-data.b2b.roleAdmin',
+                purchasing: 'kmh-demo-data.b2b.rolePurchasing',
+                buyer: 'kmh-demo-data.b2b.roleBuyer',
+            };
+
+            return (this.b2b.companies || [])
+                .filter((company) => company.exists)
+                .flatMap((company) => company.logins.map((login) => ({
+                    id: login.email,
+                    email: login.email,
+                    name: login.name,
+                    company: company.name,
+                    role: this.$tc(roles[login.role] || roles.buyer),
+                })));
         },
 
         reportColumns() {
@@ -83,6 +136,7 @@ Component.register('kmh-demo-data-index', {
                     this.status = response.status || { state: 'idle' };
                     this.channels = response.channels || [];
                     this.demoUser = response.demoUser || { exists: false };
+                    this.b2b = response.b2b || { available: false, companies: [] };
 
                     if (this.perCategory === null) {
                         this.perCategory = response.defaultPerCategory ?? null;
@@ -116,6 +170,25 @@ Component.register('kmh-demo-data-index', {
                 .then(() => {
                     this.createNotificationInfo({
                         message: this.$tc('kmh-demo-data.notification.queued'),
+                    });
+
+                    return this.loadStatus();
+                })
+                .catch(() => {
+                    this.isLoading = false;
+                    this.createNotificationError({
+                        message: this.$tc('kmh-demo-data.notification.generateFailed'),
+                    });
+                });
+        },
+
+        onGenerateB2b() {
+            this.isLoading = true;
+
+            this.kmhDemoDataApiService.generateB2b()
+                .then(() => {
+                    this.createNotificationInfo({
+                        message: this.$tc('kmh-demo-data.notification.b2bQueued'),
                     });
 
                     return this.loadStatus();

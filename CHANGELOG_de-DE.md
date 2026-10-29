@@ -1,3 +1,13 @@
+# 0.9.0-beta.4
+
+**B2B-Firmen aus der Administration erzeugen.** Einstellungen > Erweiterungen > Demo-Daten hat eine neue Karte „B2B-Firmen“: ob die B2B-Suite aktiv ist, welche Demo-Firmen bereits existieren, ihre Storefront-Logins und eine Schaltfläche „B2B-Daten erzeugen“, die nur die Firmen im bestehenden Trade-Verkaufskanal anlegt, in Sekunden. Sie ist mit Begründung deaktiviert, solange die Suite nicht aktiv ist oder der Trade-Kanal noch nicht erzeugt wurde.
+
+Geteilte Listen und Firmenbestellungen wählen ihre Produkte jetzt aus dem Sortiment des Trade-Kanals, sodass der reine B2B-Lauf und ein vollständiger Lauf dieselbe Art von Produkten verwenden.
+
+Behoben: Die Banner „Fertig“ und „Demo-Konto“ zeigten Zahlen und Logins leer an.
+
+---
+
 # 0.9.0-beta.3
 
 **B2B-Firmen im Trade-Kanal.** Ist die KommandHub B2B Foundation aktiv, erhält der Trade-Kanal zwei aktive Firmen und eine Firma in Prüfung (für die Freigabe-Demo), jeweils mit Admin und drei Mitarbeitenden, den Rollen „Buyer“ und „Purchasing manager“ und der Kundengruppe „Trade (net prices)“. Aktive Firmen bekommen außerdem eine der Firma zugeordnete Bestellhistorie und, mit B2B Quick Order, zwei geteilte Merklisten. Die Demo-Logins stehen in der README und werden vom Seed-Befehl ausgegeben. Ohne die B2B-Suite ändert sich nichts.
