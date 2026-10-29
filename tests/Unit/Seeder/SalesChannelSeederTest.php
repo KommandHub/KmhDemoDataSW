@@ -77,6 +77,19 @@ class SalesChannelSeederTest extends TestCase
         $this->assertTrue($result['rootOwned']);
     }
 
+    public function testExistingChannelIdFindsAChannelWithoutWritingOne(): void
+    {
+        $this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+            ResolvedEntity::adopted('merchant-channel', new SalesChannelEntity()),
+            ResolvedEntity::missing($this->ids->id('sales-channel', 'flagship'))
+        );
+        $this->salesChannelRepository->expects($this->never())->method('create');
+        $this->categories->expects($this->never())->method('upsert');
+
+        $this->assertSame('merchant-channel', $this->seeder->existingChannelId($this->context, 'flagship', $this->definition()));
+        $this->assertNull($this->seeder->existingChannelId($this->context, 'flagship', $this->definition()));
+    }
+
     public function testResolveChannelAdoptedMerchantRootGetsLayoutFilled(): void
     {
         $channel = new SalesChannelEntity();

@@ -34,13 +34,15 @@ class GenerateDemoDataHandler
 
         try {
             // A queue worker has no request behind it, so this is the CLI case.
-            $report = $this->seeder->seed(
-                Context::createCLIContext(),
-                $message->channels,
-                $message->withMedia,
-                $message->perCategory,
-                $message->withOrders
-            );
+            $report = $message->b2bOnly
+                ? $this->seeder->seedB2b(Context::createCLIContext())
+                : $this->seeder->seed(
+                    Context::createCLIContext(),
+                    $message->channels,
+                    $message->withMedia,
+                    $message->perCategory,
+                    $message->withOrders
+                );
 
             $this->status->markFinished($report);
         } catch (\Throwable $exception) {

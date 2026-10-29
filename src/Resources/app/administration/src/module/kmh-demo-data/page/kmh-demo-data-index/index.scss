@@ -11,6 +11,11 @@
         margin-top: 24px;
     }
 
+    &__subtitle {
+        margin: 24px 0 8px;
+    }
+
+    &__b2b-actions,
     &__user-actions {
         display: flex;
         gap: 8px;

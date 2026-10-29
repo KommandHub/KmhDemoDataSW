@@ -74,6 +74,92 @@
             </mt-card>
             {% endblock %}
 
+            {% block kmh_demo_data_index_b2b %}
+            <mt-card
+                position-identifier="kmh-demo-data-b2b"
+                class="kmh-demo-data-index__b2b"
+                :title="$tc('kmh-demo-data.b2b.title')"
+                :is-loading="isLoading"
+            >
+                <p class="kmh-demo-data-index__hint">
+                    {{ $t('kmh-demo-data.b2b.hint', { channel: b2b.channelName }) }}
+                </p>
+
+                {% block kmh_demo_data_index_b2b_unavailable %}
+                <mt-banner
+                    v-if="!b2b.available"
+                    variant="neutral"
+                    :title="$tc('kmh-demo-data.b2b.unavailableTitle')"
+                >
+                    {{ $tc('kmh-demo-data.b2b.unavailableBody') }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block kmh_demo_data_index_b2b_channel_missing %}
+                <mt-banner
+                    v-else-if="!b2b.channelReady"
+                    variant="attention"
+                    :title="$tc('kmh-demo-data.b2b.channelMissingTitle')"
+                >
+                    {{ $t('kmh-demo-data.b2b.channelMissingBody', { channel: b2b.channelName }) }}
+                </mt-banner>
+                {% endblock %}
+
+                <template v-if="b2b.available">
+                    <p
+                        v-if="!b2b.lists"
+                        class="kmh-demo-data-index__hint"
+                    >
+                        {{ $tc('kmh-demo-data.b2b.listsMissing') }}
+                    </p>
+
+                    {% block kmh_demo_data_index_b2b_companies %}
+                    <sw-data-grid
+                        class="kmh-demo-data-index__b2b-companies"
+                        :dataSource="b2bCompanyRows"
+                        :columns="b2bCompanyColumns"
+                        :showSelection="false"
+                        :showActions="false"
+                        :plainAppearance="true"
+                    />
+                    {% endblock %}
+
+                    {% block kmh_demo_data_index_b2b_logins %}
+                    <template v-if="b2bLoginRows.length">
+                        <h4 class="kmh-demo-data-index__subtitle">
+                            {{ $tc('kmh-demo-data.b2b.loginsTitle') }}
+                        </h4>
+                        <p class="kmh-demo-data-index__hint">
+                            {{ $t('kmh-demo-data.b2b.loginsHint', { password: b2b.password }) }}
+                        </p>
+                        <sw-data-grid
+                            class="kmh-demo-data-index__b2b-logins"
+                            :dataSource="b2bLoginRows"
+                            :columns="b2bLoginColumns"
+                            :showSelection="false"
+                            :showActions="false"
+                            :plainAppearance="true"
+                        />
+                    </template>
+                    {% endblock %}
+                </template>
+
+                {% block kmh_demo_data_index_b2b_generate %}
+                <div class="kmh-demo-data-index__b2b-actions">
+                    <mt-button
+                        class="kmh-demo-data-index__generate-b2b"
+                        variant="primary"
+                        :disabled="!canGenerateB2b"
+                        :is-loading="isRunning"
+                        @click="onGenerateB2b"
+                    >
+                        {{ $tc('kmh-demo-data.b2b.generate') }}
+                    </mt-button>
+                </div>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
             {% block kmh_demo_data_index_status %}
             <mt-card
                 position-identifier="kmh-demo-data-status"
@@ -105,7 +191,7 @@
                     variant="positive"
                     :title="$tc('kmh-demo-data.status.finishedTitle')"
                 >
-                    {{ $tc('kmh-demo-data.status.finishedBody', 0, {
+                    {{ $t('kmh-demo-data.status.finishedBody', {
                         created: status.created,
                         enriched: status.enriched,
                     }) }}
@@ -158,7 +244,7 @@
                     variant="positive"
                     :title="$tc('kmh-demo-data.user.existsTitle')"
                 >
-                    {{ $tc('kmh-demo-data.user.existsBody', 0, {
+                    {{ $t('kmh-demo-data.user.existsBody', {
                         email: demoUser.email,
                         username: demoUser.username,
                         privileges: demoUser.privileges,

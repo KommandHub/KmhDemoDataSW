@@ -62,7 +62,6 @@ class B2bSeeder
 
     /**
      * @param array{salesChannelId: string, languageId: string, currencyId: string, countryId: string, paymentMethodId: string, shippingMethodId: string} $channel
-     * @param array<int, string> $productIds products the trade channel sells
      */
     public function seed(
         Context $context,
@@ -70,7 +69,6 @@ class B2bSeeder
         array $channel,
         string $customerGroupId,
         string $salutationId,
-        array $productIds,
         float $taxRate
     ): void {
         if (!$this->available()) {
@@ -105,7 +103,7 @@ class B2bSeeder
         $this->createMissing($context, $report, self::ROLE, $roles);
         $this->createMissing($context, $report, self::MEMBER, $members);
 
-        $orderable = $this->orderableProducts($context, $productIds);
+        $orderable = $this->orderableProducts($context, $channel['salesChannelId']);
         $this->seedOrders($context, $report, $companies, $channel, $orderable, $taxRate);
         $this->seedLists($context, $report, $companies, $channel['salesChannelId'], $orderable);
 
@@ -118,6 +116,43 @@ class B2bSeeder
 
             $report->note(\sprintf('B2B logins for "%s" (%s): %s (password %s)', $company['name'], $company['status'], implode(', ', $logins), PeopleBlueprint::DEMO_PASSWORD));
         }
+    }
+
+    /**
+     * What the administration shows before a run: whether the suite is there,
+     * which demo companies already exist, and the logins they come with.
+     *
+     * @return array{available: bool, lists: bool, companies: list<array{name: string, status: string, exists: bool, logins: list<array{email: string, name: string, role: string}>}>}
+     */
+    public function describe(Context $context): array
+    {
+        $available = $this->available();
+        $companies = B2bBlueprint::companies();
+        $existing = $available
+            ? $this->registry->getRepository(self::COMPANY)->searchIds(new Criteria(array_map(fn (string $key): string => $this->ids->id('b2b-company', $key), array_keys($companies))), $context)->getIds()
+            : [];
+        $rows = [];
+
+        foreach ($companies as $companyKey => $company) {
+            $logins = [];
+
+            foreach ($company['members'] as $member) {
+                $logins[] = [
+                    'email' => B2bBlueprint::email($companyKey, $member['firstName'], $member['lastName']),
+                    'name' => $member['firstName'] . ' ' . $member['lastName'],
+                    'role' => $member['admin'] ? 'admin' : $member['role'],
+                ];
+            }
+
+            $rows[] = [
+                'name' => $company['name'],
+                'status' => $company['status'],
+                'exists' => \in_array($this->ids->id('b2b-company', $companyKey), $existing, true),
+                'logins' => $logins,
+            ];
+        }
+
+        return ['available' => $available, 'lists' => $this->registry->has(self::SHOPPING_LIST), 'companies' => $rows];
     }
 
     /**
@@ -247,7 +282,7 @@ class B2bSeeder
      *
      * @param array<string, array{name: string, status: string, members: array<string, mixed>}> $companies
      * @param array{salesChannelId: string, languageId: string, currencyId: string, countryId: string, paymentMethodId: string, shippingMethodId: string} $channel
-     * @param list<string> $productIds
+     * @param array<int, string> $productIds
      */
     private function seedOrders(Context $context, SeedReport $report, array $companies, array $channel, array $productIds, float $taxRate): void
     {
@@ -279,7 +314,7 @@ class B2bSeeder
 
     /**
      * @param array<string, array{status: string, lists: array<string, array{name: string, owner: string, items: int}>}> $companies
-     * @param list<string> $productIds
+     * @param array<int, string> $productIds
      */
     private function seedLists(Context $context, SeedReport $report, array $companies, string $salesChannelId, array $productIds): void
     {
@@ -321,27 +356,29 @@ class B2bSeeder
     }
 
     /**
-     * Variant-free, active products from the channel, so a list or an order
+     * Variant-free, active products the channel sells, so a list or an order
      * points at something that can go back into the cart. A parent with
      * variants would only ever be reported as not available.
      *
-     * @param array<int, string> $productIds
+     * Read from the channel rather than handed in by the caller, so a B2B-only
+     * run on an already seeded shop picks the same kind of products.
      *
-     * @return list<string>
+     * @return array<int, string>
      */
-    private function orderableProducts(Context $context, array $productIds): array
+    private function orderableProducts(Context $context, string $salesChannelId): array
     {
-        if ($productIds === []) {
-            return [];
-        }
-
-        $criteria = new Criteria($this->values->pickMany(B2bBlueprint::CHANNEL_KEY . '|b2b-products', array_values($productIds), self::LIST_PRODUCT_SAMPLE));
-        $criteria->addFilter(new EqualsFilter('childCount', 0), new EqualsFilter('active', true));
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('visibilities.salesChannelId', $salesChannelId),
+            new EqualsFilter('childCount', 0),
+            new EqualsFilter('active', true)
+        );
 
         /** @var list<string> $ids */
         $ids = $this->registry->getRepository('product')->searchIds($criteria, $context)->getIds();
+        sort($ids);
 
-        return $ids;
+        return $this->values->pickMany(B2bBlueprint::CHANNEL_KEY . '|b2b-products', $ids, self::LIST_PRODUCT_SAMPLE);
     }
 
     /**

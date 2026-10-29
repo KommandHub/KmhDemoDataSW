@@ -32,6 +32,19 @@ class GenerateDemoDataHandlerTest extends TestCase
         $handler(new GenerateDemoDataMessage(['trade'], 7, false, false));
     }
 
+    public function testACompaniesOnlyRunSeedsOnlyTheB2bData(): void
+    {
+        $seeder = $this->createMock(DemoDataSeeder::class);
+        $seeder->expects($this->never())->method('seed');
+        $seeder->expects($this->once())->method('seedB2b')->willReturn(new SeedReport());
+
+        $status = $this->createMock(SeedStatusStore::class);
+        $status->expects($this->once())->method('markFinished');
+
+        $handler = new GenerateDemoDataHandler($seeder, $status, $this->createMock(LoggerInterface::class));
+        $handler(new GenerateDemoDataMessage(b2bOnly: true));
+    }
+
     /**
      * A failed demo seed is worth reporting to whoever asked for it, not worth
      * being retried forever by the queue.

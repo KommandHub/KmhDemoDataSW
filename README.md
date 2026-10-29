@@ -298,6 +298,13 @@ come from the order seeder and are attributed to the company as the Foundation
 does at checkout, so "Order again" and the company order history have
 something to show; a pending company cannot order yet, so it has none.
 
+**From the admin:** the **B2B companies** card under Settings > Extensions >
+Demo data shows whether the suite is active, which demo companies exist and
+their storefront logins, and has its own **Generate B2B data** button. It seeds
+only the companies, on a trade channel an earlier run created, so it takes
+seconds rather than a catalogue run's minutes. Without the suite, or before the
+trade channel exists, the button is disabled and the card says why.
+
 All demo logins use the password `demo12345` on the trade channel:
 
 | Login | Company | Role |

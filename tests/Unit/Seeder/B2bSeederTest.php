@@ -18,6 +18,8 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 
 #[CoversClass(B2bSeeder::class)]
@@ -42,6 +44,9 @@ class B2bSeederTest extends TestCase
     /** @var array<string, list<string>> entity → ids that already exist */
     private array $existing = [];
 
+    /** @var array<string, mixed> field → value the product search filtered on */
+    private array $productFilters = [];
+
     public function testDoesNothingWithoutTheB2bFoundation(): void
     {
         $registry = $this->createMock(DefinitionInstanceRegistry::class);
@@ -52,7 +57,7 @@ class B2bSeederTest extends TestCase
         $report = new SeedReport();
 
         $seeder = new B2bSeeder($registry, $orderSeeder, new DemoIdGenerator(), new DeterministicValueGenerator(), []);
-        $seeder->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', ['p1'], 19.0);
+        $seeder->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', 19.0);
 
         static::assertFalse($seeder->available());
         static::assertSame([], $report->toTable());
@@ -64,14 +69,14 @@ class B2bSeederTest extends TestCase
         $orderSeeder = $this->createMock(OrderSeeder::class);
         $orderSeeder->expects($this->exactly(2))->method('seed')
             ->willReturnCallback(static function (Context $context, SeedReport $report, string $channelKey, array $channel, array $productIds, array $customerIds): array {
-                static::assertSame(['p1', 'p2', 'p3', 'p4', 'p5', 'p6'], $productIds);
+                static::assertEqualsCanonicalizing(['p1', 'p2', 'p3', 'p4', 'p5', 'p6'], $productIds);
                 static::assertCount(4, $customerIds);
 
                 return ['order-' . $channelKey => $customerIds[1]];
             });
         $report = new SeedReport();
 
-        $this->seeder($orderSeeder, true)->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'parent'], 19.0);
+        $this->seeder($orderSeeder, true)->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', 19.0);
 
         $ids = new DemoIdGenerator();
         static::assertCount(12, $this->written['customer']);
@@ -114,7 +119,10 @@ class B2bSeederTest extends TestCase
         static::assertSame('trade-channel', $list['salesChannelId']);
         static::assertSame($ids->id('b2b-customer', 'northwind', 'purchasing'), $list['customerId']);
         static::assertCount(5, $list['items']);
-        static::assertNotContains('parent', array_column($list['items'], 'productId'));
+        static::assertSame(
+            ['visibilities.salesChannelId' => 'trade-channel', 'childCount' => 0, 'active' => true],
+            $this->productFilters
+        );
 
         static::assertCount(3, $report->notes());
         static::assertStringContainsString('amina.okafor@northwind.example.com', $report->notes()[0]);
@@ -131,7 +139,7 @@ class B2bSeederTest extends TestCase
         ];
         $report = new SeedReport();
 
-        $this->seeder($orderSeeder, false)->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', [], 19.0);
+        $this->seeder($orderSeeder, false)->seed(Context::createDefaultContext(), $report, self::CHANNEL, 'trade-group', 'mr', 19.0);
 
         static::assertArrayNotHasKey('customer', $this->written);
         static::assertArrayNotHasKey(B2bSeeder::COMPANY, $this->written);
@@ -143,16 +151,51 @@ class B2bSeederTest extends TestCase
         static::assertSame('0', $table[B2bSeeder::COMPANY][1]);
     }
 
+    public function testDescribesTheCompaniesAndWhichAlreadyExist(): void
+    {
+        $this->existing = [B2bSeeder::COMPANY => [(new DemoIdGenerator())->id('b2b-company', 'northwind')]];
+
+        $state = $this->seeder($this->createMock(OrderSeeder::class), false)->describe(Context::createDefaultContext());
+
+        static::assertTrue($state['available']);
+        static::assertFalse($state['lists']);
+        static::assertCount(3, $state['companies']);
+        static::assertSame(['Northwind Building Supplies Ltd', 'active', true], [$state['companies'][0]['name'], $state['companies'][0]['status'], $state['companies'][0]['exists']]);
+        static::assertFalse($state['companies'][2]['exists']);
+        static::assertSame('pending', $state['companies'][2]['status']);
+        static::assertSame(
+            [
+                ['email' => 'amina.okafor@northwind.example.com', 'name' => 'Amina Okafor', 'role' => 'admin'],
+                ['email' => 'jonas.weber@northwind.example.com', 'name' => 'Jonas Weber', 'role' => 'purchasing'],
+            ],
+            \array_slice($state['companies'][0]['logins'], 0, 2)
+        );
+    }
+
+    public function testDescribesNothingAsGeneratedWithoutTheB2bFoundation(): void
+    {
+        $registry = $this->createMock(DefinitionInstanceRegistry::class);
+        $registry->method('has')->willReturn(false);
+        $registry->expects($this->never())->method('getRepository');
+
+        $state = (new B2bSeeder($registry, $this->createMock(OrderSeeder::class), new DemoIdGenerator(), new DeterministicValueGenerator(), []))
+            ->describe(Context::createDefaultContext());
+
+        static::assertFalse($state['available']);
+        static::assertFalse($state['lists']);
+        static::assertSame([false, false, false], array_column($state['companies'], 'exists'));
+    }
+
     public function testListsNeedQuickOrderAndOrderableProducts(): void
     {
         $orderSeeder = $this->createMock(OrderSeeder::class);
         $orderSeeder->method('seed')->willReturn([]);
 
-        $this->seeder($orderSeeder, false)->seed(Context::createDefaultContext(), new SeedReport(), self::CHANNEL, 'trade-group', 'mr', ['p1'], 19.0);
+        $this->seeder($orderSeeder, false)->seed(Context::createDefaultContext(), new SeedReport(), self::CHANNEL, 'trade-group', 'mr', 19.0);
         static::assertArrayNotHasKey(B2bSeeder::SHOPPING_LIST, $this->written);
 
         $this->written = [];
-        $this->seeder($orderSeeder, true, [])->seed(Context::createDefaultContext(), new SeedReport(), self::CHANNEL, 'trade-group', 'mr', ['p1'], 19.0);
+        $this->seeder($orderSeeder, true, [])->seed(Context::createDefaultContext(), new SeedReport(), self::CHANNEL, 'trade-group', 'mr', 19.0);
         static::assertArrayNotHasKey(B2bSeeder::SHOPPING_LIST, $this->written);
     }
 
@@ -197,7 +240,14 @@ class B2bSeederTest extends TestCase
     private function repository(string $entity, ?array $orderable): EntityRepository
     {
         $repository = $this->createMock(EntityRepository::class);
-        $repository->method('searchIds')->willReturnCallback(function () use ($entity, $orderable): IdSearchResult {
+        $repository->method('searchIds')->willReturnCallback(function (Criteria $criteria) use ($entity, $orderable): IdSearchResult {
+            if ($entity === 'product') {
+                foreach ($criteria->getFilters() as $filter) {
+                    \assert($filter instanceof EqualsFilter);
+                    $this->productFilters[$filter->getField()] = $filter->getValue();
+                }
+            }
+
             $result = $this->createMock(IdSearchResult::class);
             $result->method('getIds')->willReturn($entity === 'product' ? ($orderable ?? ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']) : ($this->existing[$entity] ?? []));
 

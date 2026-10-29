@@ -6,6 +6,7 @@ namespace Kommandhub\DemoData\Administration\Controller;
 
 use Kommandhub\DemoData\Blueprint\DemoBlueprint;
 use Kommandhub\DemoData\MessageQueue\GenerateDemoDataMessage;
+use Kommandhub\DemoData\Service\DemoDataSeeder;
 use Kommandhub\DemoData\Service\DemoUserProvisioner;
 use Kommandhub\DemoData\Service\SeedStatusStore;
 use Shopware\Core\Framework\Context;
@@ -33,7 +34,8 @@ class DemoDataController
     public function __construct(
         private readonly MessageBusInterface $bus,
         private readonly SeedStatusStore $status,
-        private readonly DemoUserProvisioner $users
+        private readonly DemoUserProvisioner $users,
+        private readonly DemoDataSeeder $seeder
     ) {
     }
 
@@ -45,26 +47,29 @@ class DemoDataController
     )]
     public function generate(Request $request): JsonResponse
     {
-        // Refusing a second run is not a nicety: two seeders racing on the same
-        // deterministic ids would each see the other's rows as missing.
-        if ($this->status->isRunning()) {
-            return new JsonResponse(
-                ['status' => $this->status->read(), 'accepted' => false],
-                JsonResponse::HTTP_CONFLICT
-            );
-        }
-
         $payload = $request->toArray();
 
-        $this->status->markQueued();
-        $this->bus->dispatch(new GenerateDemoDataMessage(
+        return $this->queue(fn (): GenerateDemoDataMessage => new GenerateDemoDataMessage(
             $this->channels($payload),
             $this->perCategory($payload),
             (bool)($payload['withMedia'] ?? true),
             (bool)($payload['withOrders'] ?? true)
         ));
+    }
 
-        return new JsonResponse(['status' => $this->status->read(), 'accepted' => true], JsonResponse::HTTP_ACCEPTED);
+    /**
+     * Only the B2B companies, on the trade channel an earlier run created.
+     * Queued like a full run, and refused the same way while one is going.
+     */
+    #[Route(
+        path: '/api/_action/kmh-demo-data/generate-b2b',
+        name: 'api.action.kmh_demo_data.generate_b2b',
+        defaults: ['_acl' => ['kmh_demo_data:generate']],
+        methods: ['POST']
+    )]
+    public function generateB2b(): JsonResponse
+    {
+        return $this->queue(static fn (): GenerateDemoDataMessage => new GenerateDemoDataMessage(b2bOnly: true));
     }
 
     #[Route(
@@ -80,6 +85,7 @@ class DemoDataController
             'channels' => $this->availableChannels(),
             'defaultPerCategory' => DemoBlueprint::PRODUCTS_PER_CATEGORY,
             'demoUser' => $this->users->describe($context),
+            'b2b' => $this->seeder->b2bStatus($context),
         ]);
     }
 
@@ -124,6 +130,27 @@ class DemoDataController
             // Null unless this request chose one. The page shows it once.
             'password' => $account->password,
         ]);
+    }
+
+    /**
+     * @param \Closure(): GenerateDemoDataMessage $message built only once the run is accepted
+     */
+    private function queue(\Closure $message): JsonResponse
+    {
+        // Refusing a second run is not a nicety: two seeders racing on the same
+        // deterministic ids would each see the other's rows as missing.
+        if ($this->status->isRunning()) {
+            return new JsonResponse(
+                ['status' => $this->status->read(), 'accepted' => false],
+                JsonResponse::HTTP_CONFLICT
+            );
+        }
+
+        $built = $message();
+        $this->status->markQueued();
+        $this->bus->dispatch($built);
+
+        return new JsonResponse(['status' => $this->status->read(), 'accepted' => true], JsonResponse::HTTP_ACCEPTED);
     }
 
     /**

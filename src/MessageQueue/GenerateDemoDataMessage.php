@@ -18,12 +18,14 @@ class GenerateDemoDataMessage implements AsyncMessageInterface
 {
     /**
      * @param array<int, string> $channels blueprint channel keys; empty means all of them
+     * @param bool $b2bOnly only the B2B companies, on the existing trade channel; the other options are ignored
      */
     public function __construct(
         public readonly array $channels = [],
         public readonly ?int $perCategory = null,
         public readonly bool $withMedia = true,
-        public readonly bool $withOrders = true
+        public readonly bool $withOrders = true,
+        public readonly bool $b2bOnly = false
     ) {
     }
 }

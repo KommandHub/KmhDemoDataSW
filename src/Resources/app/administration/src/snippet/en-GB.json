@@ -34,7 +34,8 @@
       "userCreated": "Demo account created.",
       "userUpdated": "Demo account updated.",
       "userRefused": "That email or username belongs to an account this plugin did not create. Nothing was changed.",
-      "userFailed": "The demo account could not be created."
+      "userFailed": "The demo account could not be created.",
+      "b2bQueued": "B2B generation queued."
     },
     "user": {
       "title": "Demo account",
@@ -48,6 +49,31 @@
       "create": "Create account",
       "refresh": "Refresh privileges",
       "rotate": "New password"
+    },
+    "b2b": {
+      "title": "B2B companies",
+      "hint": "Demo companies for the KommandHub B2B suite on the {channel} channel: two active companies with order history and shared shopping lists, and one pending company to approve under Customers > Companies. Only the companies are generated; the catalogue and photography are left alone, so this takes seconds.",
+      "generate": "Generate B2B data",
+      "unavailableTitle": "B2B suite not active",
+      "unavailableBody": "Install and activate KommandHub B2B Foundation to generate demo companies.",
+      "channelMissingTitle": "Trade channel missing",
+      "channelMissingBody": "The companies trade in the {channel} channel. Generate that channel first: select it under \"What to generate\" and press Generate.",
+      "listsMissing": "Shared shopping lists also need KommandHub B2B Quick Order; without it the companies are generated without lists.",
+      "columnCompany": "Company",
+      "columnStatus": "Status",
+      "columnGenerated": "Generated",
+      "statusActive": "Active",
+      "statusPending": "Pending approval",
+      "yes": "Yes",
+      "no": "Not yet",
+      "loginsTitle": "Storefront logins",
+      "loginsHint": "Every login uses the password {password}.",
+      "columnEmail": "Email",
+      "columnName": "Name",
+      "columnRole": "Role",
+      "roleAdmin": "Company admin",
+      "rolePurchasing": "Purchasing manager",
+      "roleBuyer": "Buyer"
     }
   }
 }

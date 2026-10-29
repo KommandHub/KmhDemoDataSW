@@ -1,7 +1,7 @@
 const { Classes: { ApiService } } = Shopware;
 
 /**
- * Thin wrapper over the plugin's two admin endpoints.
+ * Thin wrapper over the plugin's admin endpoints.
  *
  * Generation is dispatched rather than awaited: the request returns as soon as
  * the job is queued, and the page polls `status` for the outcome.
@@ -15,6 +15,13 @@ class KmhDemoDataApiService extends ApiService {
     generate(options = {}) {
         return this.httpClient
             .post(`${this.getApiBasePath()}/generate`, options, { headers: this.getBasicHeaders() })
+            .then(ApiService.handleResponse.bind(this));
+    }
+
+    /** Only the B2B companies, on the trade channel an earlier run created. */
+    generateB2b() {
+        return this.httpClient
+            .post(`${this.getApiBasePath()}/generate-b2b`, {}, { headers: this.getBasicHeaders() })
             .then(ApiService.handleResponse.bind(this));
     }
 

@@ -1,3 +1,13 @@
+# 0.9.0-beta.4
+
+**Générer les entreprises B2B depuis l'administration.** Paramètres > Extensions > Données de démo propose une nouvelle carte « Entreprises B2B » : si la suite B2B est active, quelles entreprises de démo existent déjà, leurs identifiants de connexion à la boutique, et un bouton « Générer les données B2B » qui crée uniquement les entreprises sur le canal Trade existant, en quelques secondes. Il est désactivé, avec la raison, tant que la suite n'est pas active ou que le canal Trade n'a pas encore été généré.
+
+Les listes partagées et les commandes d'entreprise choisissent désormais leurs produits dans l'assortiment du canal Trade, de sorte que la génération B2B seule et une génération complète utilisent le même type de produits.
+
+Corrigé : les bannières « Terminé » et « Compte de démo » affichaient leurs chiffres et identifiants vides.
+
+---
+
 # 0.9.0-beta.3
 
 **Entreprises B2B sur le canal Trade.** Lorsque KommandHub B2B Foundation est active, le canal Trade reçoit deux entreprises actives et une entreprise en attente (pour la démonstration de validation), chacune avec un administrateur et trois employés, les rôles « Buyer » et « Purchasing manager » et le groupe de clients « Trade (net prices) ». Les entreprises actives reçoivent aussi un historique de commandes attribué à l'entreprise et, avec B2B Quick Order, deux listes d'achat partagées. Les identifiants de démonstration figurent dans le README et sont affichés par la commande de génération. Sans la suite B2B, rien ne change.
